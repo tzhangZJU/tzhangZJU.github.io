@@ -16,22 +16,22 @@ const translations = {
     contactKicker: "CONTACT · 合作交流",
     openMenu: "展开导航",
     closeMenu: "收起导航",
+    sendEmail: "发送邮件",
+    emailContact: "邮件联系",
     themeDark: "夜间",
     themeLight: "日间",
     themeToDark: "切换至深色模式",
     themeToLight: "切换至浅色模式",
     heroName: "张涛",
     heroLead: "魔法原子具身模型负责人<br>算法 VP",
-    heroSummary: "博士毕业于浙江大学，先后在阿里巴巴、蔚来汽车从事视觉算法研发与自动驾驶工作；现负责具身智能大模型研发及相关技术体系建设。",
     viewWork: "查看代表工作",
     watchInterview: "观看 VLA 世界模型访谈",
     role: "当前角色",
     roleValue: "魔法原子具身模型负责人 · 算法 VP",
     expertise: "核心方向",
-    contact: "联系方式",
     aboutTitle: "从视觉算法到具身智能，<br>让前沿模型走进真实世界",
     aboutP1: "博士毕业于浙江大学，先后在阿里巴巴、蔚来汽车从事视觉算法研发与自动驾驶工作。2016 年 1 月加入魔法原子，现任具身模型负责人、算法 VP。",
-    aboutP2: "负责公司具身智能大模型研发及相关技术体系建设，覆盖团队、数据、平台、模型、评测和部署，持续推动机器人智能系统能力升级。",
+    aboutP2: "负责公司具身智能大模型研发及相关技术体系建设，覆盖数据、平台、模型、评测和部署，持续推动机器人智能系统能力升级。",
     career1Title: "浙江大学博士",
     career1Body: "以系统化科研训练建立视觉与智能算法基础。",
     career2Title: "视觉算法研发",
@@ -49,7 +49,7 @@ const translations = {
     systemTitle: "不只做模型，<br>也搭建让模型持续进化的系统",
     systemNote: "从组织与基础设施出发，打通数据生产、模型研发、评测部署和真实业务交付。",
     system1Title: "多学科团队与研发组织",
-    system1Body: "从 0 到 1 搭建近 60 人 Magic-Lab 团队，形成跨平台、数据、模型、部署和评测的协同机制。",
+    system1Body: "从 0 到 1 搭建近 60 人 团队，形成跨平台、数据、模型、部署和评测的协同机制。",
     system1Item1: "具身平台前后端 · 遥操 · 数采 · 评测",
     system1Item2: "模型工程 · 量化部署 · 感知 · 大模型",
     system2Title: "数据闭环与基础设施",
@@ -84,22 +84,23 @@ const translations = {
     flywheelLoop: "持续迭代",
     flywheelLoopPath: "执行 → 数据 → 模型 → 再执行",
     impactTitle: "以技术成果、真实交付<br>与代表工作共同验证进展",
-    impactNote: "从榜单、真机与商业交付，到开源项目与完整技术方案，集中呈现可验证的研究与产业成果。",
+    impactNote: "从榜单、真机，到开源项目与完整技术方案，集中呈现可验证的研究与产业成果。",
     resumeMetric: "筛选简历",
     interviewMetric: "面试人次",
     teamMetric: "团队规模",
     roboMetric: "RoboDojo-Sim 榜单",
     molmoMetric: "MolmoSpaces 榜单",
     realRobotMetric: "真机任务成功率",
-    orderMetric: "解决方案外售订单",
+    roboProofReserved: "榜单图像预留",
+    molmoProof: "查看完整榜单",
+    realRobotProof: "真机任务验证",
     outcome1Title: "开源成果与榜单验证",
     outcome1Body: "发布 Magic-W0、Toward Real-Time VLAs 等工作，并<strong class=\"inline-emphasis\">在 RoboDojo、MolmoSpaces 等具身模型榜单取得 Top 1</strong>。",
-    outcome2Title: "展会呈现与商业落地",
+    outcome2Title: "真机效果与展会呈现",
     outcome2Body: "整套能力支持上交会、<strong class=\"inline-emphasis\">WAIC、WRC、IFA</strong>、外滩大会等重要活动展示，并形成近千万元外售订单，验证技术系统的可交付性。",
     shanghaiFair: "上交会",
     inclusionConference: "外滩大会",
     workTitle: "从基础模型到真实机器人",
-    workNote: "以下项目均可进入团队主页查看完整技术说明、实验与演示。",
     magicW0Body: "用统一状态动作接口、结构化世界转移和层对齐交互，将世界预测与连续动作生成放进同一个基础模型。",
     realtimeBody: "把标准 Flow 的 10 步采样压缩到非均匀两步，并以系统级评测连接模型速度与真实双臂执行。",
     brainBody: "让上层 VLM 找目标、分割模型生成三色视觉协议、VLA 执行动作，把语义指令转化为可见引导。",
@@ -109,7 +110,7 @@ const translations = {
     papersTitle: "研究论文与技术报告",
     papersNote: "* 表示通讯作者&项目负责人；Under Review 状态按 2026 年 10 月材料整理。",
     demosTitle: "让方法回到真实任务",
-    demosNote: "代表性真机演示与 WAIC、WRC、IFA 等活动展示。",
+    demosNote: "代表性真机演示与 WAIC、WRC、IFA 等展演。",
     foldCloth: "叠衣服",
     foldBox: "叠纸盒",
     inkRubbing: "拓印",
@@ -132,22 +133,22 @@ const translations = {
     contactKicker: "CONTACT · COLLABORATION",
     openMenu: "Open navigation",
     closeMenu: "Close navigation",
+    sendEmail: "Send email",
+    emailContact: "Email",
     themeDark: "Dark",
     themeLight: "Light",
     themeToDark: "Switch to dark mode",
     themeToLight: "Switch to light mode",
     heroName: "Tao Zhang",
     heroLead: "Head of Embodied Models<br>VP of Algorithms, MagicLab",
-    heroSummary: "I hold a PhD from Zhejiang University and previously worked on visual algorithms and autonomous driving at Alibaba and NIO. I now lead embodied foundation-model R&D and the supporting technical system at MagicLab.",
     viewWork: "View selected work",
     watchInterview: "Watch the VLA world-model interview",
     role: "Current role",
     roleValue: "Head of Embodied Models · VP of Algorithms",
     expertise: "Expertise",
-    contact: "Contact",
     aboutTitle: "From visual algorithms to embodied AI—<br>moving frontier models into the real world",
     aboutP1: "I earned my PhD at Zhejiang University, then worked on visual algorithms and autonomous driving at Alibaba and NIO. I joined MagicLab in January 2016 and now serve as Head of Embodied Models and VP of Algorithms.",
-    aboutP2: "I lead the company’s embodied foundation-model R&D and its supporting technical system across team building, data, platforms, models, evaluation, and deployment—continually advancing the intelligence of real robotic systems.",
+    aboutP2: "I lead the company’s embodied foundation-model R&D and its supporting technical system across data, platforms, models, evaluation, and deployment—continually advancing the intelligence of real robotic systems.",
     career1Title: "PhD, Zhejiang University",
     career1Body: "Built a rigorous research foundation in vision and intelligent algorithms.",
     career2Title: "Visual Algorithm R&D",
@@ -165,7 +166,7 @@ const translations = {
     systemTitle: "Beyond models:<br>a system in which they keep improving",
     systemNote: "Start with the organization and infrastructure, then connect data production, model R&D, evaluation, deployment, and delivery.",
     system1Title: "Multidisciplinary team and R&D organization",
-    system1Body: "Built Magic-Lab from zero to nearly 60 people, creating collaboration across platforms, data, models, deployment, and evaluation.",
+    system1Body: "Built a team from zero to nearly 60 people, creating collaboration across platforms, data, models, deployment, and evaluation.",
     system1Item1: "Embodied platform · teleoperation · collection · evaluation",
     system1Item2: "Model engineering · quantization · perception · LLMs",
     system2Title: "Data flywheel and infrastructure",
@@ -207,7 +208,9 @@ const translations = {
     roboMetric: "RoboDojo-Sim leaderboard",
     molmoMetric: "MolmoSpaces leaderboard",
     realRobotMetric: "real-robot task success",
-    orderMetric: "external solution orders",
+    roboProofReserved: "Leaderboard image reserved",
+    molmoProof: "View full leaderboard",
+    realRobotProof: "Physical-task validation",
     outcome1Title: "Open source and benchmark validation",
     outcome1Body: "Released Magic-W0, Toward Real-Time VLAs, and other work, <strong class=\"inline-emphasis\">achieving Top-1 results on embodied-model benchmarks including RoboDojo and MolmoSpaces</strong>.",
     outcome2Title: "Exhibitions and commercial delivery",
@@ -215,7 +218,6 @@ const translations = {
     shanghaiFair: "CIIF",
     inclusionConference: "Inclusion Conference",
     workTitle: "From foundation models to real robots",
-    workNote: "Open each project on the team site for full methods, experiments, and demos.",
     magicW0Body: "A unified state–action interface, Structured World Transition, and layer-aligned interaction place world prediction and continuous action generation in one foundation model.",
     realtimeBody: "Compress standard ten-step Flow sampling into two non-uniform stages, then evaluate how model speed translates to real bimanual execution.",
     brainBody: "A high-level VLM finds targets, segmentation produces a three-color visual protocol, and the VLA acts—turning semantic instructions into visible guidance.",
@@ -229,7 +231,7 @@ const translations = {
     foldCloth: "Clothes folding",
     foldBox: "Box folding",
     inkRubbing: "Ink rubbing",
-    contactTitle: "For embodied AI, robot foundation models,<br>and research collaboration—let’s talk",
+    contactTitle: "For embodied AI, robot foundation models, <br>and research collaboration—let’s talk",
     footerLine: "Embodied AI · From models to real-world action",
     backTop: "Back to top"
   }
@@ -243,8 +245,20 @@ const themeIcon = themeToggle.querySelector(".theme-icon");
 const themeColor = document.querySelector('meta[name="theme-color"]');
 const menuToggle = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#site-navigation");
+const protectedEmail = [28, 28, 30, 31, 24, 29, 24, 21, 109, 87, 71, 88, 3, 72, 73, 88, 3, 78, 67];
 let currentLanguage = localStorage.getItem("site-language") === "en" ? "en" : "zh";
 let currentTheme = root.dataset.theme === "dark" ? "dark" : "light";
+
+function decodeEmail() {
+  return protectedEmail.map((value) => String.fromCharCode(value ^ 45)).join("");
+}
+
+document.querySelectorAll("[data-email-link]").forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.location.href = `mailto:${decodeEmail()}`;
+  });
+});
 
 function updateThemeControl() {
   const isDark = currentTheme === "dark";

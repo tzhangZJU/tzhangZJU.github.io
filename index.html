@@ -2,8 +2,14 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f4f7f8" />
+    <meta name="robots" content="index, follow, noimageindex, max-video-preview:0" />
     <meta
       name="description"
       content="张涛（Tao Zhang）的个人主页：浙江大学博士，魔法原子具身模型负责人、算法 VP，聚焦 VLA、WAM、具身基座大模型与数据闭环。"
@@ -14,12 +20,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307111f'/%3E%3Cpath d='M15 18h34v8H36v24h-8V26H15z' fill='%235de1c2'/%3E%3C/svg%3E"
     />
-    <script>
-      (() => {
-        const savedTheme = localStorage.getItem("site-theme");
-        document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
-      })();
-    </script>
+    <script src="theme-init.js"></script>
     <link rel="stylesheet" href="styles.css" />
     <script src="script.js" defer></script>
   </head>
@@ -50,7 +51,11 @@
           <span id="theme-label">夜间</span>
         </button>
         <button id="language-toggle" class="language-toggle" type="button" aria-label="Switch to English">EN</button>
-        <a class="header-email" href="mailto:11325058@zju.edu.cn">Email</a>
+        <a class="header-email email-icon-link" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M3.5 5.5h17v13h-17zM4 7l8 6 8-6" />
+          </svg>
+        </a>
       </div>
     </header>
 
@@ -62,12 +67,14 @@
           <p class="hero-lead" data-i18n-html="heroLead">
             魔法原子具身模型负责人<br />算法 VP
           </p>
-          <p class="hero-summary" data-i18n="heroSummary">
-            博士毕业于浙江大学，先后在阿里巴巴、蔚来汽车从事视觉算法研发与自动驾驶工作；现负责具身智能大模型研发及相关技术体系建设。
-          </p>
           <div class="hero-actions">
             <a class="button primary" href="#work" data-i18n="viewWork">查看代表工作</a>
-            <a class="button quiet" href="mailto:11325058@zju.edu.cn">11325058@zju.edu.cn</a>
+            <a class="button quiet email-icon-link email-icon-link--hero" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M3.5 5.5h17v13h-17zM4 7l8 6 8-6" />
+              </svg>
+              <span data-i18n="emailContact">邮件联系</span>
+            </a>
           </div>
         </div>
         <figure class="hero-visual">
@@ -85,11 +92,7 @@
         </div>
         <div>
           <span class="strip-label" data-i18n="expertise">核心方向</span>
-          <strong>VLA · WAM · Foundation Models · Data Flywheel</strong>
-        </div>
-        <div>
-          <span class="strip-label" data-i18n="contact">联系方式</span>
-          <strong><a href="mailto:11325058@zju.edu.cn">11325058@zju.edu.cn</a></strong>
+          <strong>VLA · WAM · Embodied Foundation Models · Data Flywheel</strong>
         </div>
       </section>
 
@@ -105,32 +108,48 @@
               博士毕业于浙江大学，先后在阿里巴巴、蔚来汽车从事视觉算法研发与自动驾驶工作。2016 年 1 月加入魔法原子，现任具身模型负责人、算法 VP。
             </p>
             <p data-i18n="aboutP2">
-              负责公司具身智能大模型研发及相关技术体系建设，覆盖团队、数据、平台、模型、评测和部署，持续推动机器人智能系统能力升级。
+              负责公司具身智能大模型研发及相关技术体系建设，覆盖数据、平台、模型、评测和部署，持续推动机器人智能系统能力升级。
             </p>
           </div>
         </div>
         <div class="career-grid" aria-label="职业经历">
           <article>
             <span class="career-mark">01</span>
-            <p class="career-org">ZHEJIANG UNIVERSITY</p>
+            <p class="career-org">
+              <span class="career-logo career-logo--zju" role="img" aria-label="Zhejiang University">
+                <img src="assets/logos/zhejiang-university-transparent.png" alt="" loading="lazy" />
+              </span>
+            </p>
             <h3 data-i18n="career1Title">浙江大学博士</h3>
             <p data-i18n="career1Body">以系统化科研训练建立视觉与智能算法基础。</p>
           </article>
           <article>
             <span class="career-mark">02</span>
-            <p class="career-org">ALIBABA</p>
+            <p class="career-org">
+              <span class="career-logo career-logo--alibaba" role="img" aria-label="Alibaba">
+                <img src="assets/logos/alibaba.svg" alt="" loading="lazy" />
+              </span>
+            </p>
             <h3 data-i18n="career2Title">视觉算法研发</h3>
             <p data-i18n="career2Body">参与产业级视觉算法研发，积累算法工程化与规模化落地经验。</p>
           </article>
           <article>
             <span class="career-mark">03</span>
-            <p class="career-org">NIO</p>
+            <p class="career-org">
+              <span class="career-logo career-logo--nio" role="img" aria-label="NIO">
+                <img src="assets/logos/nio.svg" alt="" loading="lazy" />
+              </span>
+            </p>
             <h3 data-i18n="career3Title">自动驾驶</h3>
             <p data-i18n="career3Body">面向复杂真实环境开展感知与自动驾驶技术研发。</p>
           </article>
           <article class="career-current">
             <span class="career-mark">04</span>
-            <p class="career-org">MAGICLAB · SINCE 2016.01</p>
+            <p class="career-org">
+              <span class="career-logo career-logo--magiclab" role="img" aria-label="MagicLab">
+                <img src="assets/logos/magiclab-official.png" alt="" loading="lazy" />
+              </span>
+            </p>
             <h3 data-i18n="career4Title">具身模型负责人 · 算法 VP</h3>
             <p data-i18n="career4Body">统筹具身大模型研发、技术体系建设与近 60 人团队协同。</p>
           </article>
@@ -163,7 +182,7 @@
             <span class="system-number">01</span>
             <p class="mini-label">TEAM &amp; ORGANIZATION</p>
             <h3 data-i18n="system1Title">多学科团队与研发组织</h3>
-            <p data-i18n="system1Body">从 0 到 1 搭建近 60 人 Magic-Lab 团队，形成跨平台、数据、模型、部署和评测的协同机制。</p>
+            <p data-i18n="system1Body">从 0 到 1 搭建近 60 人 团队，形成跨平台、数据、模型、部署和评测的协同机制。</p>
             <div class="team-metrics" aria-label="团队建设数据">
               <span><strong>1,495</strong><small data-i18n="resumeMetric">筛选简历</small></span>
               <span><strong>367</strong><small data-i18n="interviewMetric">面试人次</small></span>
@@ -205,31 +224,31 @@
             <span data-i18n="flywheelOrchestration">具身智能平台统一编排</span>
           </div>
           <div class="flywheel-track" role="list">
-            <article class="flywheel-step step-top" style="--step-color: #6c50ff" role="listitem">
+            <article class="flywheel-step step-top" role="listitem">
               <div class="flywheel-card"><h4 data-i18n="flywheel1Title">端侧 / 仿真执行</h4><p data-i18n="flywheel1Body">产生真实结果</p></div>
               <span class="step-stem" aria-hidden="true"></span><span class="step-node">01</span>
             </article>
-            <article class="flywheel-step step-bottom" style="--step-color: #4f82e8" role="listitem">
+            <article class="flywheel-step step-bottom" role="listitem">
               <div class="flywheel-card"><h4 data-i18n="flywheel2Title">数据自动回传</h4><p data-i18n="flywheel2Body">结果与 Episode</p></div>
               <span class="step-stem" aria-hidden="true"></span><span class="step-node">02</span>
             </article>
-            <article class="flywheel-step step-top" style="--step-color: #4db780" role="listitem">
+            <article class="flywheel-step step-top" role="listitem">
               <div class="flywheel-card"><h4 data-i18n="flywheel3Title">清洗与治理</h4><p data-i18n="flywheel3Body">筛选有效样本</p></div>
               <span class="step-stem" aria-hidden="true"></span><span class="step-node">03</span>
             </article>
-            <article class="flywheel-step step-bottom" style="--step-color: #e56777" role="listitem">
+            <article class="flywheel-step step-bottom" role="listitem">
               <div class="flywheel-card"><h4 data-i18n="flywheel4Title">标注与质检</h4><p data-i18n="flywheel4Body">自动化质量门禁</p></div>
               <span class="step-stem" aria-hidden="true"></span><span class="step-node">04</span>
             </article>
-            <article class="flywheel-step step-top" style="--step-color: #b58c2f" role="listitem">
+            <article class="flywheel-step step-top" role="listitem">
               <div class="flywheel-card"><h4 data-i18n="flywheel5Title">导出与训练</h4><p data-i18n="flywheel5Body">构建训练数据集</p></div>
               <span class="step-stem" aria-hidden="true"></span><span class="step-node">05</span>
             </article>
-            <article class="flywheel-step step-bottom" style="--step-color: #4f82e8" role="listitem">
+            <article class="flywheel-step step-bottom" role="listitem">
               <div class="flywheel-card"><h4 data-i18n="flywheel6Title">模型评测</h4><p data-i18n="flywheel6Body">验证能力提升</p></div>
               <span class="step-stem" aria-hidden="true"></span><span class="step-node">06</span>
             </article>
-            <article class="flywheel-step step-top" style="--step-color: #6c50ff" role="listitem">
+            <article class="flywheel-step step-top" role="listitem">
               <div class="flywheel-card"><h4 data-i18n="flywheel7Title">新模型下发</h4><p data-i18n="flywheel7Body">进入下一轮执行</p></div>
               <span class="step-stem" aria-hidden="true"></span><span class="step-node">07</span>
             </article>
@@ -255,13 +274,36 @@
         </div>
         <div class="section-heading-row">
           <h2 id="impact-title" data-i18n-html="impactTitle">以技术成果、真实交付<br />与代表工作共同验证进展</h2>
-          <p data-i18n="impactNote">从榜单、真机与商业交付，到开源项目与完整技术方案，集中呈现可验证的研究与产业成果。</p>
+          <p data-i18n="impactNote">从榜单、真机，到开源项目与完整技术方案，集中呈现可验证的研究与产业成果。</p>
         </div>
         <div class="scale-grid">
-          <article><strong>TOP 1</strong><span data-i18n="roboMetric">RoboDojo-Sim 榜单</span></article>
-          <article><strong>TOP 1</strong><span data-i18n="molmoMetric">MolmoSpaces 榜单</span></article>
-          <article><strong>94.6%</strong><span data-i18n="realRobotMetric">真机任务成功率</span></article>
-          <article class="scale-accent"><strong>≈¥10M</strong><span data-i18n="orderMetric">解决方案外售订单</span></article>
+          <article class="metric-card metric-robo">
+            <div class="metric-meta"><span>01</span><span>SIMULATION BENCHMARK</span></div>
+            <div class="metric-value metric-rank"><span>TOP</span><strong>1</strong></div>
+            <p class="metric-name" data-i18n="roboMetric">RoboDojo-Sim 榜单</p>
+            <div class="metric-proof metric-proof-placeholder" role="img" aria-label="RoboDojo-Sim leaderboard image reserved">
+              <span>ROBO DOJO</span>
+              <small data-i18n="roboProofReserved">榜单图像预留</small>
+            </div>
+          </article>
+          <article class="metric-card metric-molmo">
+            <div class="metric-meta"><span>02</span><span>EMBODIED BENCHMARK</span></div>
+            <div class="metric-value metric-rank"><span>TOP</span><strong>1</strong></div>
+            <p class="metric-name" data-i18n="molmoMetric">MolmoSpaces 榜单</p>
+            <a class="metric-proof metric-proof-image" href="assets/benchmarks/molmospaces-top1.png" target="_blank" rel="noopener noreferrer" aria-label="查看 MolmoSpaces Top 1 榜单截图">
+              <img src="assets/benchmarks/molmospaces-top1.png" alt="MolmoSpaces Combined 榜单截图，MagicBrain 排名第一" loading="lazy" />
+              <span data-i18n="molmoProof">查看完整榜单</span>
+            </a>
+          </article>
+          <article class="metric-card metric-robot">
+            <div class="metric-meta"><span>03</span><span>REAL ROBOT</span></div>
+            <div class="metric-value metric-percent"><strong>94.6</strong><span>%</span></div>
+            <p class="metric-name" data-i18n="realRobotMetric">真机任务成功率</p>
+            <div class="metric-proof metric-proof-eval">
+              <span>REAL ROBOT</span>
+              <small data-i18n="realRobotProof">真机任务验证</small>
+            </div>
+          </article>
         </div>
         <div class="outcome-grid">
           <article>
@@ -277,7 +319,7 @@
           </article>
           <article>
             <p class="mini-label">REAL-WORLD DELIVERY</p>
-            <h3 data-i18n="outcome2Title">展会呈现与商业落地</h3>
+            <h3 data-i18n="outcome2Title">真机效果与展会呈现</h3>
             <p data-i18n-html="outcome2Body">整套能力支持上交会、<strong class="inline-emphasis">WAIC、WRC、IFA</strong>、外滩大会等重要活动展示，并形成近千万元外售订单，验证技术系统的可交付性。</p>
             <div class="event-list" aria-label="代表活动">
               <span data-i18n="shanghaiFair">上交会</span><span class="event-highlight">WAIC</span><span class="event-highlight">WRC</span><span class="event-highlight">IFA</span><span data-i18n="inclusionConference">外滩大会</span>
@@ -289,7 +331,6 @@
             <p class="mini-label">SELECTED WORK</p>
             <h3 id="work-title" data-i18n="workTitle">从基础模型到真实机器人</h3>
           </div>
-          <p data-i18n="workNote">以下项目均可进入团队主页查看完整技术说明、实验与演示。</p>
         </div>
 
         <article class="project project-featured reveal">
@@ -378,7 +419,7 @@
             <div>
               <p class="paper-venue">TECHNICAL REPORT</p>
               <h3>Magic-W0: A Structured World–Action Foundation Model for Physical Intelligence</h3>
-              <p>Xuhua Chen, Zhenhan Yin, Yuan Zhang, <strong>Tao Zhang</strong>, et al.</p>
+              <p>Xuhua Chen, Zhenhan Yin, Yuan Zhang, <strong>Tao Zhang*</strong>, et al.</p>
             </div>
             <a href="https://arxiv.org/abs/2609.39870" target="_blank" rel="noopener noreferrer">arXiv</a>
           </article>
@@ -387,7 +428,7 @@
             <div>
               <p class="paper-venue">TECHNICAL REPORT</p>
               <h3>Toward Real-Time VLAs: Stage-Aware Two-Step Flow Denoising and System-Level Evaluation</h3>
-              <p>Di Wu, Rongtian Shen, Ping Liu, Yan Shen, Zhenhan Yin, Shun Zuo, Xuhua Chen, He Zheng, Lingfeng Zhang, Jianglin Zhang, <strong>Tao Zhang</strong></p>
+              <p>Di Wu, Rongtian Shen, Ping Liu, Yan Shen, Zhenhan Yin, Shun Zuo, Xuhua Chen, He Zheng, Lingfeng Zhang, Jianglin Zhang, <strong>Tao Zhang*</strong></p>
             </div>
             <a href="https://arxiv.org/abs/2609.39822" target="_blank" rel="noopener noreferrer">arXiv</a>
           </article>
@@ -438,21 +479,21 @@
         </div>
         <div class="section-heading-row reveal">
           <h2 id="demos-title" data-i18n="demosTitle">让方法回到真实任务</h2>
-          <p data-i18n="demosNote">代表性真机演示与 WAIC、WRC、IFA 等活动展示。</p>
+          <p data-i18n="demosNote">代表性真机演示与 WAIC、WRC、IFA 等展演。</p>
         </div>
         <div class="demo-grid">
-          <a class="demo-card reveal" href="https://embodied.magiclab.top/works/wam/magic-w0/demos/fold-cloth-clip-1.mp4" target="_blank" rel="noopener noreferrer">
-            <img src="assets/demo-fold-cloth.png" alt="机器人折叠衣物" loading="lazy" />
+          <a class="demo-card reveal" href="assets/demos/fold-cloth-exhibition.mp4" target="_blank" rel="noopener noreferrer">
+            <img src="assets/demos/fold-cloth-poster.png" alt="展会现场机器人折叠衣物" loading="lazy" />
             <span>01 · REAL ROBOT</span>
             <h3 data-i18n="foldCloth">叠衣服</h3>
           </a>
-          <a class="demo-card reveal" href="https://embodied.magiclab.top/works/wam/magic-w0/demos/box-handling-clip-1.mp4" target="_blank" rel="noopener noreferrer">
-            <img src="assets/demo-fold-box.jpg" alt="机器人折叠纸盒" loading="lazy" />
+          <a class="demo-card reveal" href="assets/demos/fold-box-waic.mp4" target="_blank" rel="noopener noreferrer">
+            <img src="assets/demos/fold-box-poster.png" alt="展会现场机器人折叠纸盒" loading="lazy" />
             <span>02 · REAL ROBOT</span>
             <h3 data-i18n="foldBox">叠纸盒</h3>
           </a>
-          <a class="demo-card reveal" href="https://embodied.magiclab.top/works/wam/magic-w0/demos/stamping-clip-1.mp4" target="_blank" rel="noopener noreferrer">
-            <img src="assets/demo-ink-rubbing.jpg" alt="机器人进行拓印任务" loading="lazy" />
+          <a class="demo-card reveal" href="assets/demos/ink-rubbing-exhibition.mp4" target="_blank" rel="noopener noreferrer">
+            <img src="assets/demos/ink-rubbing-poster.png" alt="展会现场机器人进行拓印任务" loading="lazy" />
             <span>03 · REAL ROBOT</span>
             <h3 data-i18n="inkRubbing">拓印</h3>
           </a>
@@ -463,7 +504,12 @@
         <p class="eyebrow" data-i18n="contactKicker">CONTACT · 合作交流</p>
         <h2 id="contact-title" data-i18n-html="contactTitle">关于具身智能、机器人基础模型<br />与研究协作，欢迎交流</h2>
         <div class="contact-row">
-          <a href="mailto:11325058@zju.edu.cn">11325058@zju.edu.cn</a>
+          <a class="email-icon-link email-icon-link--contact" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M3.5 5.5h17v13h-17zM4 7l8 6 8-6" />
+            </svg>
+            <span data-i18n="emailContact">邮件联系</span>
+          </a>
           <a href="https://github.com/tzhangZJU" target="_blank" rel="noopener noreferrer">GitHub · tzhangZJU</a>
           <a href="https://embodied.magiclab.top/" target="_blank" rel="noopener noreferrer">EmbodiedModel</a>
         </div>

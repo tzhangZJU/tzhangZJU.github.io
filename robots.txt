@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /assets/demos/
+Disallow: /assets/interview-cover.png
