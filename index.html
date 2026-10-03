@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f7f8" />
+    <meta
+      name="description"
+      content="张涛（Tao Zhang）的个人主页：浙江大学博士，魔法原子具身模型负责人、算法 VP，聚焦 VLA、WAM、具身基座大模型与数据闭环。"
+    />
+    <title>Tao Zhang · Embodied AI</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307111f'/%3E%3Cpath d='M15 18h34v8H36v24h-8V26H15z' fill='%235de1c2'/%3E%3C/svg%3E"
+    />
+    <script>
+      (() => {
+        const savedTheme = localStorage.getItem("site-theme");
+        document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
+      })();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-i18n="skip">跳转到正文</a>
+
+    <header class="site-header">
+      <span class="header-spacer" aria-hidden="true"></span>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-navigation"
+        data-i18n-aria="openMenu"
+      >
+        <span></span><span></span>
+      </button>
+      <nav id="site-navigation" aria-label="主导航">
+        <a href="#about" data-i18n="navAbout">关于</a>
+        <a href="#system" data-i18n="navSystem">能力体系</a>
+        <a href="#work" data-i18n="navWork">成果与工作</a>
+        <a href="#papers" data-i18n="navPapers">论文</a>
+        <a href="#demos" data-i18n="navDemos">演示</a>
+      </nav>
+      <div class="header-actions">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">
+          <span class="theme-icon" aria-hidden="true">☾</span>
+          <span id="theme-label">夜间</span>
+        </button>
+        <button id="language-toggle" class="language-toggle" type="button" aria-label="Switch to English">EN</button>
+        <a class="header-email" href="mailto:11325058@zju.edu.cn">Email</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="home" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">ZHEJIANG UNIVERSITY PHD · EMBODIED AI</p>
+          <h1 id="hero-title" data-i18n="heroName">张涛</h1>
+          <p class="hero-lead" data-i18n-html="heroLead">
+            魔法原子具身模型负责人<br />算法 VP
+          </p>
+          <p class="hero-summary" data-i18n="heroSummary">
+            博士毕业于浙江大学，先后在阿里巴巴、蔚来汽车从事视觉算法研发与自动驾驶工作；现负责具身智能大模型研发及相关技术体系建设。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#work" data-i18n="viewWork">查看代表工作</a>
+            <a class="button quiet" href="mailto:11325058@zju.edu.cn">11325058@zju.edu.cn</a>
+          </div>
+        </div>
+        <figure class="hero-visual">
+          <img src="assets/interview-cover.png" alt="Tao Zhang 在 VLA 世界模型访谈中" />
+          <figcaption>
+            <a href="https://weixin.qq.com/sph/Az0VNmUY9y" target="_blank" rel="noopener noreferrer" data-i18n="watchInterview">观看 VLA 世界模型访谈</a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="identity-strip" id="about" aria-label="个人研究概览">
+        <div>
+          <span class="strip-label" data-i18n="role">当前角色</span>
+          <strong data-i18n="roleValue">魔法原子具身模型负责人 · 算法 VP</strong>
+        </div>
+        <div>
+          <span class="strip-label" data-i18n="expertise">核心方向</span>
+          <strong>VLA · WAM · Foundation Models · Data Flywheel</strong>
+        </div>
+        <div>
+          <span class="strip-label" data-i18n="contact">联系方式</span>
+          <strong><a href="mailto:11325058@zju.edu.cn">11325058@zju.edu.cn</a></strong>
+        </div>
+      </section>
+
+      <section class="section about-section reveal" aria-labelledby="about-title">
+        <div class="section-kicker">
+          <span>00</span>
+          <p data-i18n="aboutKicker">PROFILE · 关于</p>
+        </div>
+        <div class="about-grid">
+          <h2 id="about-title" data-i18n-html="aboutTitle">从视觉算法到具身智能，<br />让前沿模型走进真实世界</h2>
+          <div class="about-copy">
+            <p data-i18n="aboutP1">
+              博士毕业于浙江大学，先后在阿里巴巴、蔚来汽车从事视觉算法研发与自动驾驶工作。2016 年 1 月加入魔法原子，现任具身模型负责人、算法 VP。
+            </p>
+            <p data-i18n="aboutP2">
+              负责公司具身智能大模型研发及相关技术体系建设，覆盖团队、数据、平台、模型、评测和部署，持续推动机器人智能系统能力升级。
+            </p>
+          </div>
+        </div>
+        <div class="career-grid" aria-label="职业经历">
+          <article>
+            <span class="career-mark">01</span>
+            <p class="career-org">ZHEJIANG UNIVERSITY</p>
+            <h3 data-i18n="career1Title">浙江大学博士</h3>
+            <p data-i18n="career1Body">以系统化科研训练建立视觉与智能算法基础。</p>
+          </article>
+          <article>
+            <span class="career-mark">02</span>
+            <p class="career-org">ALIBABA</p>
+            <h3 data-i18n="career2Title">视觉算法研发</h3>
+            <p data-i18n="career2Body">参与产业级视觉算法研发，积累算法工程化与规模化落地经验。</p>
+          </article>
+          <article>
+            <span class="career-mark">03</span>
+            <p class="career-org">NIO</p>
+            <h3 data-i18n="career3Title">自动驾驶</h3>
+            <p data-i18n="career3Body">面向复杂真实环境开展感知与自动驾驶技术研发。</p>
+          </article>
+          <article class="career-current">
+            <span class="career-mark">04</span>
+            <p class="career-org">MAGICLAB · SINCE 2016.01</p>
+            <h3 data-i18n="career4Title">具身模型负责人 · 算法 VP</h3>
+            <p data-i18n="career4Body">统筹具身大模型研发、技术体系建设与近 60 人团队协同。</p>
+          </article>
+        </div>
+        <div class="profile-notes">
+          <article>
+            <p class="mini-label" data-i18n="recognition">学术服务与人才认可</p>
+            <h3 class="reviewer-line" data-i18n="reviewerLine">ICRA / ICLR / IROS 等会议审稿人</h3>
+            <p class="talent-line" data-i18n="recognitionBody">杭州市高层次人才 · 上海市高层次人才</p>
+          </article>
+          <article>
+            <p class="mini-label" data-i18n="publicVoice">行业交流</p>
+            <h3>WAIC · GEIA ASIA · <span data-i18n="yanzhi">焉知人形机器人大会</span></h3>
+            <p data-i18n="publicVoiceBody">受邀发表主旨演讲与直播分享，并接受粉丝近千万的头部具身智能媒体个人专访，持续推动技术路线与产业认知升级。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section system-section reveal" id="system" aria-labelledby="system-title">
+        <div class="section-kicker">
+          <span>01</span>
+          <p data-i18n="systemKicker">SYSTEM · 能力体系</p>
+        </div>
+        <div class="section-heading-row">
+          <h2 id="system-title" data-i18n-html="systemTitle">不只做模型，<br />也搭建让模型持续进化的系统</h2>
+          <p data-i18n="systemNote">从组织与基础设施出发，打通数据生产、模型研发、评测部署和真实业务交付。</p>
+        </div>
+        <div class="system-grid">
+          <article class="system-card">
+            <span class="system-number">01</span>
+            <p class="mini-label">TEAM &amp; ORGANIZATION</p>
+            <h3 data-i18n="system1Title">多学科团队与研发组织</h3>
+            <p data-i18n="system1Body">从 0 到 1 搭建近 60 人 Magic-Lab 团队，形成跨平台、数据、模型、部署和评测的协同机制。</p>
+            <div class="team-metrics" aria-label="团队建设数据">
+              <span><strong>1,495</strong><small data-i18n="resumeMetric">筛选简历</small></span>
+              <span><strong>367</strong><small data-i18n="interviewMetric">面试人次</small></span>
+              <span><strong>≈60</strong><small data-i18n="teamMetric">团队规模</small></span>
+            </div>
+            <ul>
+              <li data-i18n="system1Item1">具身平台前后端 · 遥操 · 数采 · 评测</li>
+              <li data-i18n="system1Item2">模型工程 · 量化部署 · 感知 · 大模型</li>
+              <li>VLA · WAM · Reinforcement Learning</li>
+            </ul>
+          </article>
+          <article class="system-card">
+            <span class="system-number">02</span>
+            <p class="mini-label">DATA &amp; INFRASTRUCTURE</p>
+            <h3 data-i18n="system2Title">数据闭环与基础设施</h3>
+            <p data-i18n="system2Body">建设数据、算力、遥操和数采平台，让高质量机器人数据能够持续生产、治理和回流。</p>
+            <ul>
+              <li data-i18n="system2Item1">数据平台 · 算力平台 · 基础/超视距遥操</li>
+              <li data-i18n="system2Item2">规模化数据增强 · 自动化处理流水线</li>
+              <li data-i18n="system2Item3">多类预标模型 · 质量评估与训练回流</li>
+            </ul>
+          </article>
+          <article class="system-card">
+            <span class="system-number">03</span>
+            <p class="mini-label">MODELS &amp; DELIVERY</p>
+            <h3 data-i18n="system3Title">基础模型与工程交付</h3>
+            <p data-i18n="system3Body">围绕世界模型与 VLA+WM 形成模型研发主线，并把强化学习、记忆、后训练和推理优化带入完整交付链路。</p>
+            <ul>
+              <li data-i18n="system3Item1">世界模型 · VLA+WM · 强化学习</li>
+              <li data-i18n="system3Item2">Memory · 后训练 · 推理加速优化</li>
+              <li data-i18n="system3Item3">从模型训练、量化到真机部署与评测</li>
+            </ul>
+          </article>
+        </div>
+        <div class="flywheel" aria-label="持续迭代的数据飞轮">
+          <div class="flywheel-heading">
+            <p class="mini-label">DATA FLYWHEEL</p>
+            <h3 data-i18n="flywheelTitle">每一次执行都沉淀数据资产，每一轮训练都释放新的端侧能力</h3>
+            <span data-i18n="flywheelOrchestration">具身智能平台统一编排</span>
+          </div>
+          <div class="flywheel-track" role="list">
+            <article class="flywheel-step step-top" style="--step-color: #6c50ff" role="listitem">
+              <div class="flywheel-card"><h4 data-i18n="flywheel1Title">端侧 / 仿真执行</h4><p data-i18n="flywheel1Body">产生真实结果</p></div>
+              <span class="step-stem" aria-hidden="true"></span><span class="step-node">01</span>
+            </article>
+            <article class="flywheel-step step-bottom" style="--step-color: #4f82e8" role="listitem">
+              <div class="flywheel-card"><h4 data-i18n="flywheel2Title">数据自动回传</h4><p data-i18n="flywheel2Body">结果与 Episode</p></div>
+              <span class="step-stem" aria-hidden="true"></span><span class="step-node">02</span>
+            </article>
+            <article class="flywheel-step step-top" style="--step-color: #4db780" role="listitem">
+              <div class="flywheel-card"><h4 data-i18n="flywheel3Title">清洗与治理</h4><p data-i18n="flywheel3Body">筛选有效样本</p></div>
+              <span class="step-stem" aria-hidden="true"></span><span class="step-node">03</span>
+            </article>
+            <article class="flywheel-step step-bottom" style="--step-color: #e56777" role="listitem">
+              <div class="flywheel-card"><h4 data-i18n="flywheel4Title">标注与质检</h4><p data-i18n="flywheel4Body">自动化质量门禁</p></div>
+              <span class="step-stem" aria-hidden="true"></span><span class="step-node">04</span>
+            </article>
+            <article class="flywheel-step step-top" style="--step-color: #b58c2f" role="listitem">
+              <div class="flywheel-card"><h4 data-i18n="flywheel5Title">导出与训练</h4><p data-i18n="flywheel5Body">构建训练数据集</p></div>
+              <span class="step-stem" aria-hidden="true"></span><span class="step-node">05</span>
+            </article>
+            <article class="flywheel-step step-bottom" style="--step-color: #4f82e8" role="listitem">
+              <div class="flywheel-card"><h4 data-i18n="flywheel6Title">模型评测</h4><p data-i18n="flywheel6Body">验证能力提升</p></div>
+              <span class="step-stem" aria-hidden="true"></span><span class="step-node">06</span>
+            </article>
+            <article class="flywheel-step step-top" style="--step-color: #6c50ff" role="listitem">
+              <div class="flywheel-card"><h4 data-i18n="flywheel7Title">新模型下发</h4><p data-i18n="flywheel7Body">进入下一轮执行</p></div>
+              <span class="step-stem" aria-hidden="true"></span><span class="step-node">07</span>
+            </article>
+          </div>
+          <div class="flywheel-insights">
+            <span data-i18n="flywheelInsight1">失败样本优先回流</span>
+            <span data-i18n="flywheelInsight2">全程保留数据与模型血缘</span>
+            <span data-i18n="flywheelInsight3">训练完成后一键重新部署</span>
+          </div>
+          <div class="flywheel-return">
+            <span class="loop-terminal loop-terminal-start" aria-hidden="true"></span>
+            <strong data-i18n="flywheelLoop">持续迭代</strong>
+            <span data-i18n="flywheelLoopPath">执行 → 数据 → 模型 → 再执行</span>
+            <span class="loop-terminal loop-terminal-end" aria-hidden="true"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section impact-section work-section" id="work" aria-labelledby="impact-title">
+        <div class="section-kicker">
+          <span>02</span>
+          <p data-i18n="workKicker">IMPACT &amp; WORK · 成果与代表工作</p>
+        </div>
+        <div class="section-heading-row">
+          <h2 id="impact-title" data-i18n-html="impactTitle">以技术成果、真实交付<br />与代表工作共同验证进展</h2>
+          <p data-i18n="impactNote">从榜单、真机与商业交付，到开源项目与完整技术方案，集中呈现可验证的研究与产业成果。</p>
+        </div>
+        <div class="scale-grid">
+          <article><strong>TOP 1</strong><span data-i18n="roboMetric">RoboDojo-Sim 榜单</span></article>
+          <article><strong>TOP 1</strong><span data-i18n="molmoMetric">MolmoSpaces 榜单</span></article>
+          <article><strong>94.6%</strong><span data-i18n="realRobotMetric">真机任务成功率</span></article>
+          <article class="scale-accent"><strong>≈¥10M</strong><span data-i18n="orderMetric">解决方案外售订单</span></article>
+        </div>
+        <div class="outcome-grid">
+          <article>
+            <p class="mini-label">OPEN SOURCE &amp; BENCHMARKS</p>
+            <h3 data-i18n="outcome1Title">开源成果与榜单验证</h3>
+            <p data-i18n-html="outcome1Body">发布 Magic-W0、Toward Real-Time VLAs 等工作，并<strong class="inline-emphasis">在 RoboDojo、MolmoSpaces 等具身模型榜单取得 Top 1</strong>。</p>
+            <div class="evidence-chips">
+              <span>RoboDojo-Sim · TOP 1</span>
+              <span>MolmoSpaces · TOP 1</span>
+              <span>Magic-W0 · 94.6% Real Robot</span>
+              <span>21.956 ms · Model Inference</span>
+            </div>
+          </article>
+          <article>
+            <p class="mini-label">REAL-WORLD DELIVERY</p>
+            <h3 data-i18n="outcome2Title">展会呈现与商业落地</h3>
+            <p data-i18n-html="outcome2Body">整套能力支持上交会、<strong class="inline-emphasis">WAIC、WRC、IFA</strong>、外滩大会等重要活动展示，并形成近千万元外售订单，验证技术系统的可交付性。</p>
+            <div class="event-list" aria-label="代表活动">
+              <span data-i18n="shanghaiFair">上交会</span><span class="event-highlight">WAIC</span><span class="event-highlight">WRC</span><span class="event-highlight">IFA</span><span data-i18n="inclusionConference">外滩大会</span>
+            </div>
+          </article>
+        </div>
+        <div class="work-intro reveal">
+          <div>
+            <p class="mini-label">SELECTED WORK</p>
+            <h3 id="work-title" data-i18n="workTitle">从基础模型到真实机器人</h3>
+          </div>
+          <p data-i18n="workNote">以下项目均可进入团队主页查看完整技术说明、实验与演示。</p>
+        </div>
+
+        <article class="project project-featured reveal">
+          <a class="project-media" href="https://embodied.magiclab.top/works/wam/magic-w0/index.html" target="_blank" rel="noopener noreferrer">
+            <img src="assets/magic-w0.png" alt="Magic-W0 结构化世界动作基础模型总览" loading="lazy" />
+          </a>
+          <div class="project-copy">
+            <p class="project-type">FOUNDATION MODEL · PROJECT LEAD</p>
+            <h3>Magic-W0</h3>
+            <p class="project-subtitle">A Structured World–Action Foundation Model for Physical Intelligence</p>
+            <p data-i18n="magicW0Body">用统一状态动作接口、结构化世界转移和层对齐交互，将世界预测与连续动作生成放进同一个基础模型。</p>
+            <ul class="tag-list" aria-label="Magic-W0 highlights">
+              <li>RoboDojo-Sim #1</li>
+              <li>99.1% LIBERO</li>
+              <li>94.6% Real Robot</li>
+            </ul>
+            <div class="project-links">
+              <a href="https://embodied.magiclab.top/works/wam/magic-w0/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
+              <a href="https://arxiv.org/abs/2609.39870" target="_blank" rel="noopener noreferrer">Paper</a>
+              <a href="https://github.com/MagiclabRobotics/Magic-W0" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+          </div>
+        </article>
+
+        <div class="project-grid">
+          <article class="project project-compact reveal">
+            <a class="project-media" href="https://embodied.magiclab.top/works/inference/zh/index.html" target="_blank" rel="noopener noreferrer">
+              <img src="assets/realtime-vla.png" alt="实时 VLA 分布式推理与执行架构" loading="lazy" />
+            </a>
+            <div class="project-copy">
+              <p class="project-type">REAL-TIME INFERENCE</p>
+              <h3>Toward Real-Time VLAs</h3>
+              <p data-i18n="realtimeBody">把标准 Flow 的 10 步采样压缩到非均匀两步，并以系统级评测连接模型速度与真实双臂执行。</p>
+              <div class="project-links">
+                <a href="https://embodied.magiclab.top/works/inference/zh/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
+                <a href="https://arxiv.org/abs/2609.39822" target="_blank" rel="noopener noreferrer">Paper</a>
+                <a href="https://github.com/MagiclabRobotics/Inference" target="_blank" rel="noopener noreferrer">GitHub</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="project project-compact reveal">
+            <a class="project-media" href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer">
+              <img src="assets/magic-brain.png" alt="Magic-Brain 视觉引导管线" loading="lazy" />
+            </a>
+            <div class="project-copy">
+              <p class="project-type">EMBODIED AGENT</p>
+              <h3>Magic-Brain</h3>
+              <p data-i18n="brainBody">让上层 VLM 找目标、分割模型生成三色视觉协议、VLA 执行动作，把语义指令转化为可见引导。</p>
+              <div class="project-links">
+                <a href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
+                <a href="https://www.magiclab.top/news/64" target="_blank" rel="noopener noreferrer" data-i18n="chineseIntro">中文介绍</a>
+                <a href="https://www.magiclab.top/en/news/65" target="_blank" rel="noopener noreferrer">English</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="project project-compact project-wide reveal">
+            <a class="project-media" href="https://embodied.magiclab.top/works/memory/index.html" target="_blank" rel="noopener noreferrer">
+              <img src="assets/dual-stream-memory.svg" alt="Dual-Stream Memory 模型示意" loading="lazy" />
+            </a>
+            <div class="project-copy">
+              <p class="project-type">MEMORY FOR VLA · ICRA 2027 UNDER REVIEW</p>
+              <h3>Dual-Stream Memory</h3>
+              <p data-i18n="memoryBody">以时序记忆追踪执行状态，以空间检索找回历史视觉证据，让 VLA 处理依赖历史的操作任务。</p>
+              <div class="project-links">
+                <a href="https://embodied.magiclab.top/works/memory/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section papers-section" id="papers" aria-labelledby="papers-title">
+        <div class="section-kicker reveal">
+          <span>03</span>
+          <p data-i18n="papersKicker">PUBLICATIONS · 论文</p>
+        </div>
+        <div class="section-heading-row reveal">
+          <h2 id="papers-title" data-i18n="papersTitle">研究论文与技术报告</h2>
+          <p data-i18n="papersNote">* 表示通讯作者&amp;项目负责人；Under Review 状态按 2026 年 10 月材料整理。</p>
+        </div>
+        <div class="paper-list">
+          <article class="paper-item paper-released reveal">
+            <span class="paper-year">2026</span>
+            <div>
+              <p class="paper-venue">TECHNICAL REPORT</p>
+              <h3>Magic-W0: A Structured World–Action Foundation Model for Physical Intelligence</h3>
+              <p>Xuhua Chen, Zhenhan Yin, Yuan Zhang, <strong>Tao Zhang</strong>, et al.</p>
+            </div>
+            <a href="https://arxiv.org/abs/2609.39870" target="_blank" rel="noopener noreferrer">arXiv</a>
+          </article>
+          <article class="paper-item paper-released reveal">
+            <span class="paper-year">2026</span>
+            <div>
+              <p class="paper-venue">TECHNICAL REPORT</p>
+              <h3>Toward Real-Time VLAs: Stage-Aware Two-Step Flow Denoising and System-Level Evaluation</h3>
+              <p>Di Wu, Rongtian Shen, Ping Liu, Yan Shen, Zhenhan Yin, Shun Zuo, Xuhua Chen, He Zheng, Lingfeng Zhang, Jianglin Zhang, <strong>Tao Zhang</strong></p>
+            </div>
+            <a href="https://arxiv.org/abs/2609.39822" target="_blank" rel="noopener noreferrer">arXiv</a>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>RM-WAM: Reliable Memory-Augmented World Action Models for Long-Horizon Robot Manipulation</h3><p>Cui Miao, Junhao Yu, Ping Liu, Ning Yang, Xuhua Chen, He Zheng, Xiaodong Wang, <strong>Tao Zhang*</strong></p></div>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>Execution-Aligned Progressive Noise for Consistent Asynchronous Replanning in Generative Robot Policies</h3><p>Di Wu, Ping Liu, Xuhua Chen, He Zheng, Lingfeng Zhang, Rongtian Shen, <strong>Tao Zhang*</strong></p></div>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>Conditional Trajectory Peaks: Single-Pass Multimodal Policies over Action Chunks</h3><p>Di Wu, Rongtian Shen, Ping Liu, Xuhua Chen, He Zheng, Lingfeng Zhang, <strong>Tao Zhang*</strong></p></div>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>Dual-Stream Memory for Vision-Language-Action Policies</h3><p>Yang Wang, Ping Liu, Ruiyu Wang, Xuhua Chen, Lingfeng Zhang, <strong>Tao Zhang*</strong>, Jiangning Zhang</p></div>
+            <a href="https://embodied.magiclab.top/works/memory/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>Atomic-WAM: Execution-Grounded Atomic-Motion Reasoning for World Action Models</h3><p>Shijun Shi*, Zhe Liu, Zhi Hou, Yinan Chen, <strong>Tao Zhang</strong>, Kai Hu, Yong Liu, Jiangning Zhang</p></div>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">ICLR 2027 · UNDER REVIEW</p><h3>VLMs are Native Action Models: Unleashing the Manipulation Capabilities of VLMs with Explicit Action-Space Grounding</h3><p>Jingkun Yi, Shujie Zhang, Zirui Zhou, Haoxiao Wang, Haiyang Sun, Yuhang Dong, Xudong Xu, Xing Shen, <strong>Tao Zhang</strong>, Yong Liu, Jiangning Zhang</p></div>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">ICLR 2027 · UNDER REVIEW</p><h3>TARSphere: A Robot-Oriented Full-Stack Framework for Long-Horizon Embodied Agents in Evolving Physical and Social Environments</h3><p>Yicheng Xu, Zhikai Xu, Ziyuan Chen, Yuhang Dong, <strong>Tao Zhang</strong>, Zhucun Xue, Yong Liu, Jiangning Zhang</p></div>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">AAAI 2027 · UNDER REVIEW</p><h3>Rubrics4VLA: Shaping Safer and More Reliable VLA Trajectory with Evolving Rubrics</h3><p>Qiuting Yu, Miao Pan, Jiarun Li, Kaili Liu, Sicheng He, <strong>Tao Zhang</strong>, Jintao Chen, Yongliang Shen, Xuhong Zhang, Wenqi Zhang</p></div>
+          </article>
+          <article class="paper-item reveal">
+            <span class="paper-year">2026</span>
+            <div><p class="paper-venue">AAAI 2027 · UNDER REVIEW</p><h3>Entity-Factorized Spatial Evidence Compression for Embodied Question Answering</h3><p>Bo-Cheng Hu, Xinyuan Liu, Kewei Wei, <strong>Tao Zhang</strong>, Yue Zhao, Lingfeng Zhang, Hongwei Wang, Gaoang Wang</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section demos-section" id="demos" aria-labelledby="demos-title">
+        <div class="section-kicker reveal">
+          <span>04</span>
+          <p data-i18n="demosKicker">DEMOS · 演示</p>
+        </div>
+        <div class="section-heading-row reveal">
+          <h2 id="demos-title" data-i18n="demosTitle">让方法回到真实任务</h2>
+          <p data-i18n="demosNote">代表性真机演示与 WAIC、WRC、IFA 等活动展示。</p>
+        </div>
+        <div class="demo-grid">
+          <a class="demo-card reveal" href="https://embodied.magiclab.top/works/wam/magic-w0/demos/fold-cloth-clip-1.mp4" target="_blank" rel="noopener noreferrer">
+            <img src="assets/demo-fold-cloth.png" alt="机器人折叠衣物" loading="lazy" />
+            <span>01 · REAL ROBOT</span>
+            <h3 data-i18n="foldCloth">叠衣服</h3>
+          </a>
+          <a class="demo-card reveal" href="https://embodied.magiclab.top/works/wam/magic-w0/demos/box-handling-clip-1.mp4" target="_blank" rel="noopener noreferrer">
+            <img src="assets/demo-fold-box.jpg" alt="机器人折叠纸盒" loading="lazy" />
+            <span>02 · REAL ROBOT</span>
+            <h3 data-i18n="foldBox">叠纸盒</h3>
+          </a>
+          <a class="demo-card reveal" href="https://embodied.magiclab.top/works/wam/magic-w0/demos/stamping-clip-1.mp4" target="_blank" rel="noopener noreferrer">
+            <img src="assets/demo-ink-rubbing.jpg" alt="机器人进行拓印任务" loading="lazy" />
+            <span>03 · REAL ROBOT</span>
+            <h3 data-i18n="inkRubbing">拓印</h3>
+          </a>
+        </div>
+      </section>
+
+      <section class="contact-section reveal" id="contact" aria-labelledby="contact-title">
+        <p class="eyebrow" data-i18n="contactKicker">CONTACT · 合作交流</p>
+        <h2 id="contact-title" data-i18n-html="contactTitle">关于具身智能、机器人基础模型<br />与研究协作，欢迎交流</h2>
+        <div class="contact-row">
+          <a href="mailto:11325058@zju.edu.cn">11325058@zju.edu.cn</a>
+          <a href="https://github.com/tzhangZJU" target="_blank" rel="noopener noreferrer">GitHub · tzhangZJU</a>
+          <a href="https://embodied.magiclab.top/" target="_blank" rel="noopener noreferrer">EmbodiedModel</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>© <span id="year">2026</span> Tao Zhang</span>
+      <span data-i18n="footerLine">Embodied AI · 从模型走向真实世界的行动</span>
+      <a href="#home" data-i18n="backTop">返回顶部</a>
+    </footer>
+  </body>
+</html>
