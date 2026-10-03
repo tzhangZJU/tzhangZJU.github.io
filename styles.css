@@ -420,19 +420,24 @@ h1 {
 .demo-card img { width: 100%; height: auto; margin-bottom: 1.25rem; object-fit: contain; display: block; filter: saturate(.86); transition: filter .25s ease; }
 .demo-card:hover img, .demo-card:focus-visible img { filter: saturate(1.08); }
 .demo-card h3 { margin: .35rem 0 0; font-size: clamp(1.6rem, 2.4vw, 2.15rem); }
+.demo-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: 1.15rem; }
+.demo-fact { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .7rem; align-content: start; margin: 0; padding: .9rem 1rem; border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--panel-glass); }
+.demo-fact > strong { padding-top: .1rem; color: var(--accent); font-size: .66rem; font-weight: 800; letter-spacing: .1em; white-space: nowrap; }
+.demo-fact > span { color: var(--muted-strong); font-size: .84rem; line-height: 1.65; }
+.demo-fact b { color: var(--ink); font-weight: 750; }
 
-.contact-section { padding: clamp(4.5rem, 7vw, 6rem) 0; }
-.contact-section h2 { max-width: 1000px; margin: 1.5rem 0 3rem; }
+.contact-section { padding: clamp(3.75rem, 6vw, 5rem) 0; }
+.contact-section h2 { max-width: 1000px; margin: 1.15rem 0 2.25rem; font-size: clamp(1.5rem, 2.3vw, 2rem); line-height: 1.3; letter-spacing: -.03em; }
 @media (min-width: 1021px) {
   .contact-section h2 {
     max-width: none;
-    font-size: clamp(1.8rem, 2.5vw, 2.35rem);
-    line-height: 1.2;
-    letter-spacing: -.035em;
+    font-size: clamp(1.5rem, 2vw, 1.95rem);
+    line-height: 1.3;
+    letter-spacing: -.03em;
     white-space: nowrap;
   }
   .contact-section h2 br { display: none; }
-  html[lang="en"] .contact-section h2 { font-size: clamp(1.35rem, 2vw, 1.85rem); }
+  html[lang="en"] .contact-section h2 { font-size: clamp(1.2rem, 1.6vw, 1.55rem); }
 }
 .contact-row { display: flex; flex-wrap: wrap; gap: 1rem 2.2rem; color: var(--muted-strong); }
 .contact-row a { padding-bottom: .25rem; border-bottom: 1px solid var(--line-strong); }
@@ -481,6 +486,7 @@ footer a { justify-self: end; }
   .hero { padding-top: 3rem; }
   .hero-visual { order: -1; }
   .section-heading-row h2, .about-grid h2, .contact-section h2 { font-size: clamp(2.25rem, 8vw, 3.1rem); line-height: 1.1; letter-spacing: -.045em; }
+  .contact-section h2 { max-width: 38rem; margin: 1rem 0 2rem; font-size: clamp(1.35rem, 4.6vw, 1.65rem); line-height: 1.35; letter-spacing: -.025em; }
   .about-grid h2 br, #impact-title br { display: none; }
   .work-intro h3 { font-size: clamp(2rem, 7vw, 2.75rem); }
   .profile-notes, .outcome-grid { grid-template-columns: 1fr; }
@@ -503,6 +509,7 @@ footer a { justify-self: end; }
   .paper-item { grid-template-columns: 3.75rem 1fr; gap: 1.25rem; }
   .paper-item > a { grid-column: 2; justify-self: start; }
   .demo-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .demo-facts { grid-template-columns: 1fr; }
   footer { grid-template-columns: 1fr auto; }
   footer span:nth-child(2) { display: none; }
 }
@@ -521,6 +528,7 @@ footer a { justify-self: end; }
   .section { padding: 2.5rem 0; }
   .section-kicker { margin-bottom: 1.75rem; }
   .section-heading-row h2, .about-grid h2, .contact-section h2 { font-size: clamp(2.1rem, 10vw, 2.8rem); }
+  .contact-section h2 { margin-bottom: 1.75rem; font-size: clamp(1.2rem, 5.2vw, 1.45rem); line-height: 1.4; letter-spacing: -.02em; }
   .work-intro { margin-top: 2.75rem; padding-top: 2.5rem; }
   .work-intro h3 { font-size: clamp(2rem, 9vw, 2.6rem); }
   .career-grid, .scale-grid { grid-template-columns: 1fr; }

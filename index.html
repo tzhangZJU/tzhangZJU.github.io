@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="referrer" content="no-referrer" />
@@ -8,11 +8,11 @@
       content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f4f7f8" />
+    <meta name="theme-color" content="#07111f" />
     <meta name="robots" content="index, follow, noimageindex, max-video-preview:0" />
     <meta
       name="description"
-      content="张涛（Tao Zhang）的个人主页：浙江大学博士，魔法原子具身模型负责人、算法 VP，聚焦 VLA、WAM、具身基座大模型与数据闭环。"
+      content="Tao Zhang's personal homepage: Zhejiang University PhD, Head of Embodied Models and VP of Algorithms at MagicLab, focused on VLA, WAM, embodied foundation models, and data flywheels."
     />
     <title>Tao Zhang · Embodied AI</title>
     <link
@@ -46,11 +46,11 @@
         <a href="#demos" data-i18n="navDemos">演示</a>
       </nav>
       <div class="header-actions">
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">
-          <span class="theme-icon" aria-hidden="true">☾</span>
-          <span id="theme-label">夜间</span>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="true">
+          <span class="theme-icon" aria-hidden="true">☼</span>
+          <span id="theme-label">Light</span>
         </button>
-        <button id="language-toggle" class="language-toggle" type="button" aria-label="Switch to English">EN</button>
+        <button id="language-toggle" class="language-toggle" type="button" aria-label="切换为中文">中文</button>
         <a class="header-email email-icon-link" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail">
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M3.5 5.5h17v13h-17zM4 7l8 6 8-6" />
@@ -486,16 +486,28 @@
             <img src="assets/demos/fold-cloth-poster.png" alt="展会现场机器人折叠衣物" loading="lazy" />
             <span>01 · REAL ROBOT</span>
             <h3 data-i18n="foldCloth">叠衣服</h3>
+            <div class="demo-facts">
+              <p class="demo-fact"><strong data-i18n="demoEffectLabel">效果</strong><span data-i18n-html="foldClothEffect">不同颜色、尺寸衣物成功率 <b>100%</b>，较 SOTA 开源模型 KAI0 提升 <b>16.67%</b>；平均执行 <b>59.59 秒</b>，缩短 17 秒。</span></p>
+              <p class="demo-fact"><strong data-i18n="demoExhibitionLabel">参展</strong><span data-i18n-html="foldClothExhibition">Zero-shot 部署，亮相上交会、WAIC、WRC、IFA；获多家媒体及 VIP 参观团关注，相关微信公众号视频获 <b>2k+ 点赞</b>。</span></p>
+            </div>
           </a>
           <a class="demo-card reveal" href="assets/demos/fold-box-waic.mp4" target="_blank" rel="noopener noreferrer">
             <img src="assets/demos/fold-box-poster.png" alt="展会现场机器人折叠纸盒" loading="lazy" />
             <span>02 · REAL ROBOT</span>
             <h3 data-i18n="foldBox">叠纸盒</h3>
+            <div class="demo-facts">
+              <p class="demo-fact"><strong data-i18n="demoEffectLabel">效果</strong><span data-i18n-html="foldBoxEffect">折叠纸盒与粘贴短胶带整体成功率 <b>95.5%</b>，成功案例执行约 <b>45 秒</b>；纸盒被推倒或移动后仍可恢复并继续作业。</span></p>
+              <p class="demo-fact"><strong data-i18n="demoExhibitionLabel">参展</strong><span data-i18n="foldBoxExhibition">亮相上交会、WAIC、WRC、IFA，获媒体、VIP 参观团及专业人士现场肯定。</span></p>
+            </div>
           </a>
           <a class="demo-card reveal" href="assets/demos/ink-rubbing-exhibition.mp4" target="_blank" rel="noopener noreferrer">
             <img src="assets/demos/ink-rubbing-poster.png" alt="展会现场机器人进行拓印任务" loading="lazy" />
             <span>03 · REAL ROBOT</span>
             <h3 data-i18n="inkRubbing">拓印</h3>
+            <div class="demo-facts">
+              <p class="demo-fact"><strong data-i18n="demoEffectLabel">效果</strong><span data-i18n-html="inkRubbingEffect">使用自采数据训练的模型，成功率 <b>93.3%</b>，平均执行约 <b>40 秒</b>；流畅完成蘸墨至拓印全过程，并适应初始位置变化与光照干扰。</span></p>
+              <p class="demo-fact"><strong data-i18n="demoExhibitionLabel">参展</strong><span data-i18n="inkRubbingExhibition">于 WRC 完成现场展出。</span></p>
+            </div>
           </a>
         </div>
       </section>

@@ -1,8 +1,8 @@
 (() => {
   try {
     const savedTheme = localStorage.getItem("site-theme");
-    document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = savedTheme === "light" ? "light" : "dark";
   } catch {
-    document.documentElement.dataset.theme = "light";
+    document.documentElement.dataset.theme = "dark";
   }
 })();

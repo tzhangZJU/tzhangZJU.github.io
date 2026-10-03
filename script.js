@@ -114,6 +114,14 @@ const translations = {
     foldCloth: "叠衣服",
     foldBox: "叠纸盒",
     inkRubbing: "拓印",
+    demoEffectLabel: "效果",
+    demoExhibitionLabel: "参展",
+    foldClothEffect: "不同颜色、尺寸衣物成功率 <b>100%</b>，较 SOTA 开源模型 KAI0 提升 <b>16.67%</b>；平均执行 <b>59.59 秒</b>，缩短 17 秒。",
+    foldClothExhibition: "Zero-shot 部署，亮相上交会、WAIC、WRC、IFA；获多家媒体及 VIP 参观团关注，相关微信公众号视频获 <b>2k+ 点赞</b>。",
+    foldBoxEffect: "折叠纸盒与粘贴短胶带整体成功率 <b>95.5%</b>，成功案例执行约 <b>45 秒</b>；纸盒被推倒或移动后仍可恢复并继续作业。",
+    foldBoxExhibition: "亮相上交会、WAIC、WRC、IFA，获媒体、VIP 参观团及专业人士现场肯定。",
+    inkRubbingEffect: "使用自采数据训练的模型，成功率 <b>93.3%</b>，平均执行约 <b>40 秒</b>；流畅完成蘸墨至拓印全过程，并适应初始位置变化与光照干扰。",
+    inkRubbingExhibition: "于 WRC 完成现场展出。",
     contactTitle: "关于具身智能、机器人基础模型<br>与研究协作，欢迎交流",
     footerLine: "Embodied AI · 从模型走向真实世界的行动",
     backTop: "返回顶部"
@@ -231,6 +239,14 @@ const translations = {
     foldCloth: "Clothes folding",
     foldBox: "Box folding",
     inkRubbing: "Ink rubbing",
+    demoEffectLabel: "RESULT",
+    demoExhibitionLabel: "EXHIBITION",
+    foldClothEffect: "Achieved a <b>100% success rate</b> across garments of different colors and sizes—<b>16.67%</b> above the SOTA open-source KAI0 model—with an average execution time of <b>59.59 seconds</b>, 17 seconds faster.",
+    foldClothExhibition: "Deployed zero-shot at CIIF, WAIC, WRC, and IFA; attracted media and VIP delegations, with the related WeChat video receiving <b>2K+ likes</b>.",
+    foldBoxEffect: "Achieved a <b>95.5% overall success rate</b> for box folding and short-tape application, with successful runs taking about <b>45 seconds</b>; resumes operation after the box is knocked over or repositioned.",
+    foldBoxExhibition: "Demonstrated at CIIF, WAIC, WRC, and IFA, earning positive feedback from media, VIP delegations, and industry professionals.",
+    inkRubbingEffect: "A model trained on self-collected data achieved a <b>93.3% success rate</b> and about <b>40 seconds</b> average execution time; it completes the process from inking to rubbing while tolerating initial-position and lighting variations.",
+    inkRubbingExhibition: "Demonstrated live at WRC.",
     contactTitle: "For embodied AI, robot foundation models, <br>and research collaboration—let’s talk",
     footerLine: "Embodied AI · From models to real-world action",
     backTop: "Back to top"
@@ -246,7 +262,7 @@ const themeColor = document.querySelector('meta[name="theme-color"]');
 const menuToggle = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#site-navigation");
 const protectedEmail = [28, 28, 30, 31, 24, 29, 24, 21, 109, 87, 71, 88, 3, 72, 73, 88, 3, 78, 67];
-let currentLanguage = localStorage.getItem("site-language") === "en" ? "en" : "zh";
+let currentLanguage = localStorage.getItem("site-language") === "zh" ? "zh" : "en";
 let currentTheme = root.dataset.theme === "dark" ? "dark" : "light";
 
 function decodeEmail() {
