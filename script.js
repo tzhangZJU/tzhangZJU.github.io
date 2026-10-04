@@ -121,7 +121,7 @@ const translations = {
     foldBoxEffect: "折叠纸盒与粘贴短胶带整体成功率 <b>95.5%</b>，成功案例执行约 <b>45 秒</b>；纸盒被推倒或移动后仍可恢复并继续作业。",
     foldBoxExhibition: "亮相上交会、WAIC、WRC、IFA，获媒体、VIP 参观团及专业人士现场肯定。",
     inkRubbingEffect: "使用自采数据训练的模型，成功率 <b>93.3%</b>，平均执行约 <b>40 秒</b>；流畅完成蘸墨至拓印全过程，并适应初始位置变化与光照干扰。",
-    inkRubbingExhibition: "于 WRC 完成现场展出。",
+    inkRubbingExhibition: "于 WRC、外滩大会完成现场展出。",
     contactTitle: "关于具身智能、机器人基础模型<br>与研究协作，欢迎交流",
     footerLine: "Embodied AI · 从模型走向真实世界的行动",
     backTop: "返回顶部"
@@ -246,7 +246,7 @@ const translations = {
     foldBoxEffect: "Achieved a <b>95.5% overall success rate</b> for box folding and short-tape application, with successful runs taking about <b>45 seconds</b>; resumes operation after the box is knocked over or repositioned.",
     foldBoxExhibition: "Demonstrated at CIIF, WAIC, WRC, and IFA, earning positive feedback from media, VIP delegations, and industry professionals.",
     inkRubbingEffect: "A model trained on self-collected data achieved a <b>93.3% success rate</b> and about <b>40 seconds</b> average execution time; it completes the process from inking to rubbing while tolerating initial-position and lighting variations.",
-    inkRubbingExhibition: "Demonstrated live at WRC.",
+    inkRubbingExhibition: "Demonstrated live at WRC and the Inclusion Conference on the Bund.",
     contactTitle: "For embodied AI, robot foundation models, <br>and research collaboration—let’s talk",
     footerLine: "Embodied AI · From models to real-world action",
     backTop: "Back to top"
@@ -332,8 +332,28 @@ menuToggle.addEventListener("click", () => {
   menuToggle.setAttribute("aria-label", translations[currentLanguage][isOpen ? "openMenu" : "closeMenu"]);
 });
 navigation.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+const navigationTargets = Array.from(navigation.querySelectorAll('a[href^="#"]'))
+  .map((link) => ({ link, section: document.querySelector(link.getAttribute("href")) }))
+  .filter(({ section }) => section);
+
+function updateActiveNavigation() {
+  const marker = window.scrollY + window.innerHeight * 0.32;
+  let activeLink = null;
+  navigationTargets.forEach(({ link, section }) => {
+    if (section.offsetTop <= marker) activeLink = link;
+  });
+  navigationTargets.forEach(({ link }) => {
+    const isActive = link === activeLink;
+    link.classList.toggle("is-active", isActive);
+    if (isActive) link.setAttribute("aria-current", "location");
+    else link.removeAttribute("aria-current");
+  });
+}
+
+window.addEventListener("scroll", updateActiveNavigation, { passive: true });
 window.addEventListener("resize", () => {
   if (window.innerWidth > 800) closeMenu();
+  updateActiveNavigation();
 });
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -354,3 +374,4 @@ if (reduceMotion || !("IntersectionObserver" in window)) {
 document.querySelector("#year").textContent = new Date().getFullYear();
 applyTheme(currentTheme, false);
 applyLanguage(currentLanguage);
+updateActiveNavigation();
