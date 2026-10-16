@@ -111,6 +111,10 @@ function optionalNumber(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function optionalText(value, maxLength = 200) {
+  return typeof value === "string" && value ? value.slice(0, maxLength) : null;
+}
+
 function classifyIPVersion(ipAddress) {
   if (typeof ipAddress !== "string" || !ipAddress) return "unknown";
   if (ipAddress.includes(":")) return "IPv6";
@@ -159,34 +163,49 @@ export default {
     const userAgent = request.headers.get("User-Agent") || "";
     const cf = request.cf || {};
     const location = body.location && typeof body.location === "object" ? body.location : {};
+    const details = location.details && typeof location.details === "object" ? location.details : {};
+    const latitude = optionalNumber(location.latitude);
+    const longitude = optionalNumber(location.longitude);
+    const hasGps = latitude !== null && latitude >= -90 && latitude <= 90
+      && longitude !== null && longitude >= -180 && longitude <= 180;
+    const hasReverseGeocode = hasGps && optionalText(details.district);
 
     const ipAddress = request.headers.get("CF-Connecting-IP") || "unknown";
 
     await env.DB.prepare(`
       INSERT INTO analytics_events (
-        event_name, source_page, referrer, ip_address, ip_version,
+        event_name, event_id, visitor_id, session_id,
+        source_page, referrer, ip_address, ip_version,
         country, region, region_code, city, postal_code, timezone,
+        district, district_code, location_source, geocoding_provider,
         device, browser, operating_system, consent_version,
         latitude, longitude, location_accuracy_m, location_captured_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.event,
+      optionalText(body.event_id, 100),
+      optionalText(body.visitor_id, 100),
+      optionalText(body.session_id, 100),
       sourcePage,
       typeof body.referrer === "string" ? body.referrer.slice(0, 500) : "",
       ipAddress,
       classifyIPVersion(ipAddress),
-      cf.country || null,
-      cf.region || null,
-      cf.regionCode || null,
-      cf.city || null,
-      cf.postalCode || null,
+      hasGps ? (optionalText(details.country_code, 10) || cf.country || null) : (cf.country || null),
+      hasGps ? (optionalText(details.region) || cf.region || null) : (cf.region || null),
+      hasGps ? (optionalText(details.region_code, 30) || cf.regionCode || null) : (cf.regionCode || null),
+      hasGps ? (optionalText(details.city) || cf.city || null) : (cf.city || null),
+      hasGps ? (optionalText(details.postal_code, 30) || cf.postalCode || null) : (cf.postalCode || null),
       cf.timezone || null,
+      hasGps ? optionalText(details.district) : null,
+      hasGps ? optionalText(details.district_code, 30) : null,
+      hasReverseGeocode ? "gps_reverse_geocode" : (hasGps ? "gps" : "ip"),
+      hasReverseGeocode ? optionalText(details.provider, 50) : null,
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
       typeof body.consent_version === "string" ? body.consent_version.slice(0, 20) : "v2",
-      optionalNumber(location.latitude),
-      optionalNumber(location.longitude),
+      hasGps ? latitude : null,
+      hasGps ? longitude : null,
       optionalNumber(location.accuracy),
       typeof location.captured_at === "string" ? location.captured_at.slice(0, 50) : null
     ).run();

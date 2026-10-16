@@ -463,24 +463,59 @@ function requestCurrentLocation() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => resolve({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-        captured_at: new Date(position.timestamp).toISOString()
-      }),
+      async (position) => {
+        const location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          captured_at: new Date(position.timestamp).toISOString()
+        };
+        location.details = await reverseGeocodeLocation(location);
+        resolve(location);
+      },
       () => resolve(null),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     );
   });
 }
 
-async function requestLocationWithoutPrompt() {
-  if (!("permissions" in navigator) || !("geolocation" in navigator)) return null;
+function selectDistrict(localityData) {
+  const administrative = localityData?.localityInfo?.administrative;
+  if (Array.isArray(administrative)) {
+    const district = [...administrative].reverse().find((item) => {
+      const code = typeof item?.chinaAdminCode === "string" ? item.chinaAdminCode : "";
+      return /^\d{6}$/.test(code) && !code.endsWith("00");
+    });
+    if (district?.name) {
+      return { name: district.name, code: district.chinaAdminCode || "" };
+    }
+  }
+  return { name: localityData?.locality || "", code: "" };
+}
+
+async function reverseGeocodeLocation(location) {
   try {
-    const permission = await navigator.permissions.query({ name: "geolocation" });
-    if (permission.state !== "granted") return null;
-    return requestCurrentLocation();
+    const endpoint = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+    endpoint.searchParams.set("latitude", String(location.latitude));
+    endpoint.searchParams.set("longitude", String(location.longitude));
+    endpoint.searchParams.set("localityLanguage", "zh");
+    const response = await fetch(endpoint, { credentials: "omit", cache: "default" });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const district = selectDistrict(data);
+    const municipality = /^(?:北京|上海|天津|重庆)(?:市)?$/u.test(data.principalSubdivision || "");
+    return {
+      country: data.countryName || "",
+      country_code: data.countryCode || "",
+      region: data.principalSubdivision || "",
+      region_code: data.principalSubdivisionCode || "",
+      city: data.city || (municipality ? data.principalSubdivision : data.locality) || "",
+      district: district.name,
+      district_code: district.code,
+      postal_code: data.postcode || "",
+      provider: "BigDataCloud",
+      lookup_source: data.lookupSource || "reverseGeocoding"
+    };
   } catch {
     return null;
   }
@@ -564,7 +599,7 @@ setConsentDialog(false);
 privacySettings.hidden = true;
 trackPageView();
 void flushAnalyticsQueue();
-requestLocationWithoutPrompt().then((location) => {
+requestCurrentLocation().then((location) => {
   currentLocation = location;
   if (currentLocation) trackAnalyticsEvent("location_update");
 });

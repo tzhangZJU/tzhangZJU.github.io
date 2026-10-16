@@ -61,7 +61,8 @@ D1 中的 IP 字段名为 `ip_address`，地址类型字段名为 `ip_version`�
 
 ```sql
 SELECT id, occurred_at, event_name, source_page, ip_address, ip_version,
-       country, region, city, device, browser, operating_system,
+       country, region, city, district, district_code, location_source,
+       device, browser, operating_system,
        consent_version, latitude, longitude, location_accuracy_m,
        location_captured_at
 FROM analytics_events
@@ -74,6 +75,8 @@ LIMIT 100;
 事件由前端元素的 `data-analytics-event` 标记统一触发，并在 Cloudflare Worker 中通过显式白名单校验；新增事件时应同步更新前端标记与 Worker 白名单。D1 主表 `analytics_events` 已移除旧版仅允许 `page_view`、`ppt_download_click` 的表级约束，迁移前的 5 条记录保存在备份表 `analytics_events_legacy_v2_20261017` 中。
 
 移动端事件会先写入浏览器本地待发送队列，仅在 Worker 返回成功后移除。用户首次同意统计后，`analytics_consent_accept` 与 `page_view` 会立即上报，不再等待 GPS；定位成功后再通过独立的 `location_update` 事件补充经纬度。网络恢复、下次打开页面及页面转入后台时都会重试尚未确认送达的事件，以降低微信内置浏览器和移动网络切换造成的漏报。
+
+定位采用两级策略：没有 GPS 时使用 Cloudflare 的公网 IP 定位，`location_source=ip`；浏览器获得 GPS 权限后，通过 BigDataCloud 客户端逆地理编码补充 `district`、`district_code` 及更准确的省市信息，`location_source=gps_reverse_geocode`；逆地理编码失败但 GPS 可用时仍保留经纬度，`location_source=gps`。
 
 检查移动端记录可使用：
 
