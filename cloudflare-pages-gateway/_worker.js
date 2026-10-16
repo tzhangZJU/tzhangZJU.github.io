@@ -18,6 +18,18 @@ const ALLOWED_EVENTS = new Set([
   "vla_interview_click"
 ]);
 
+// Representative district-level postal codes. Reverse-geocoding providers do
+// not always return a postcode even when they resolve a Chinese district, and
+// Cloudflare's fallback postcode may only represent the municipality.
+const DISTRICT_POSTAL_CODES = new Map([
+  ["310101", "200001"], ["310104", "200030"], ["310105", "200050"],
+  ["310106", "200040"], ["310107", "200333"], ["310109", "200086"],
+  ["310110", "200082"], ["310112", "201100"], ["310113", "201900"],
+  ["310114", "201800"], ["310115", "200135"], ["310116", "201540"],
+  ["310117", "201600"], ["310118", "201700"], ["310120", "201400"],
+  ["310151", "202150"]
+]);
+
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://tzhangzju.github.io",
@@ -122,6 +134,18 @@ function classifyIPVersion(ipAddress) {
   return "unknown";
 }
 
+function resolvePostalCode(details, cf, hasReverseGeocode) {
+  const providerPostalCode = optionalText(details.postal_code, 30);
+  if (!hasReverseGeocode) return providerPostalCode || cf.postalCode || null;
+
+  const districtCode = String(details.district_code || "").replace(/\D/g, "");
+  const districtPostalCode = DISTRICT_POSTAL_CODES.get(districtCode);
+  if (districtPostalCode && (!providerPostalCode || providerPostalCode === "200000")) {
+    return districtPostalCode;
+  }
+  return providerPostalCode || districtPostalCode || cf.postalCode || null;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -194,7 +218,7 @@ export default {
       hasGps ? (optionalText(details.region) || cf.region || null) : (cf.region || null),
       hasGps ? (optionalText(details.region_code, 30) || cf.regionCode || null) : (cf.regionCode || null),
       hasGps ? (optionalText(details.city) || cf.city || null) : (cf.city || null),
-      hasGps ? (optionalText(details.postal_code, 30) || cf.postalCode || null) : (cf.postalCode || null),
+      hasGps ? resolvePostalCode(details, cf, hasReverseGeocode) : (cf.postalCode || null),
       cf.timezone || null,
       hasGps ? optionalText(details.district) : null,
       hasGps ? optionalText(details.district_code, 30) : null,

@@ -78,6 +78,8 @@ LIMIT 100;
 
 定位采用两级策略：页面打开时主动请求浏览器定位权限；没有 GPS 时使用 Cloudflare 的公网 IP 定位，`location_source=ip`；浏览器获得 GPS 权限后，通过 BigDataCloud 客户端逆地理编码补充 `district`、`district_code` 及更准确的省市信息，`location_source=gps_reverse_geocode`；逆地理编码失败但 GPS 可用时仍保留经纬度，`location_source=gps`。针对部分必须由用户手势触发权限提示的移动端或内嵌浏览器，首次自动请求失败后会在用户第一次点击或按键时重试一次。
 
+当 GPS 已解析到上海区级行政代码、但逆地理编码服务没有返回邮编时，网关使用区级代表邮编补全 `postal_code`，避免继续沿用上海市级的 `200000`。若服务返回了更精确的邮编，则优先保留服务返回值。
+
 每次前端更新发布时，必须同时更新 `script.js` 中的 `analyticsConsentVersion`、`index.html` 中的脚本缓存版本，以及 Cloudflare 网关健康检查返回的 `consent_version`。
 
 检查移动端记录可使用：
