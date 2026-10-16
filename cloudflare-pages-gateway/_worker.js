@@ -43,12 +43,58 @@ function classifyDevice(userAgent) {
 }
 
 function classifyBrowser(userAgent) {
-  if (/MicroMessenger/i.test(userAgent)) return "WeChat";
-  if (/Edg\//i.test(userAgent)) return "Edge";
-  if (/OPR\//i.test(userAgent)) return "Opera";
-  if (/CriOS|Chrome\//i.test(userAgent)) return "Chrome";
+  if (!userAgent) return "Unknown";
+
+  // App-embedded browsers must be checked before their Chromium/WebKit engine.
+  if (/MicroMessenger/i.test(userAgent)) return /wxwork/i.test(userAgent) ? "WeCom" : "WeChat";
+  if (/DingTalk/i.test(userAgent)) return "DingTalk";
+  if (/Lark|Feishu/i.test(userAgent)) return "Feishu/Lark";
+  if (/AlipayClient/i.test(userAgent)) return "Alipay";
+  if (/AliApp\(TB|WindVane/i.test(userAgent)) return "Taobao";
+  if (/baiduboxapp/i.test(userAgent)) return "Baidu App";
+  if (/Weibo/i.test(userAgent)) return "Weibo";
+  if (/Instagram/i.test(userAgent)) return "Instagram";
+  if (/FBAN|FBAV/i.test(userAgent)) return "Facebook";
+  if (/ChatGPT|OpenAI|Codex/i.test(userAgent)) return "ChatGPT/Codex";
+  if (/LinkedInApp/i.test(userAgent)) return "LinkedIn";
+  if (/Twitter/i.test(userAgent)) return "X/Twitter";
+  if (/Telegram/i.test(userAgent)) return "Telegram";
+  if (/(?:^|\s)Line\//i.test(userAgent)) return "LINE";
+  if (/musical_ly|TikTok/i.test(userAgent)) return "TikTok";
+  if (/aweme|BytedanceWebview/i.test(userAgent)) return "Douyin";
+  if (/XiaoHongShu|XHS/i.test(userAgent)) return "Xiaohongshu";
+  if (/MQQBrowser/i.test(userAgent)) return "QQ Browser";
+  if (/(?:^|\s)QQ\//i.test(userAgent)) return "QQ";
+  if (/GSA\//i.test(userAgent)) return "Google App";
+
+  // Vendor browsers and privacy browsers generally include a Chrome token too.
+  if (/HuaweiBrowser/i.test(userAgent)) return "Huawei Browser";
+  if (/SamsungBrowser/i.test(userAgent)) return "Samsung Internet";
+  if (/MiuiBrowser/i.test(userAgent)) return "MIUI Browser";
+  if (/VivoBrowser/i.test(userAgent)) return "vivo Browser";
+  if (/HeyTapBrowser|OppoBrowser/i.test(userAgent)) return "OPPO Browser";
+  if (/Quark/i.test(userAgent)) return "Quark";
+  if (/UCBrowser|UCWEB/i.test(userAgent)) return "UC Browser";
+  if (/QHBrowser|360SE|360EE/i.test(userAgent)) return "360 Browser";
+  if (/MetaSr|SogouMobileBrowser/i.test(userAgent)) return "Sogou Browser";
+  if (/DuckDuckGo/i.test(userAgent)) return "DuckDuckGo";
+  if (/YaBrowser/i.test(userAgent)) return "Yandex Browser";
+  if (/Vivaldi/i.test(userAgent)) return "Vivaldi";
+  if (/Brave/i.test(userAgent)) return "Brave";
+  if (/Whale/i.test(userAgent)) return "Naver Whale";
+  if (/Arc\//i.test(userAgent)) return "Arc";
+
+  // Standalone browsers and generic system WebViews.
+  if (/EdgiOS|EdgA|Edg\//i.test(userAgent)) return "Edge";
+  if (/OPiOS|OPR\/|Opera Mini|Opera Mobi/i.test(userAgent)) return "Opera";
   if (/FxiOS|Firefox\//i.test(userAgent)) return "Firefox";
-  if (/Safari\//i.test(userAgent)) return "Safari";
+  if (/Electron/i.test(userAgent)) return "Electron";
+  if (/HeadlessChrome/i.test(userAgent)) return "Headless Chrome";
+  if (/CriOS|Chrome\//i.test(userAgent) && !/; wv\)|\bwv\b|Version\/4\.0/i.test(userAgent)) return "Chrome";
+  if (/Android/i.test(userAgent) && /; wv\)|\bwv\b|Version\/4\.0/i.test(userAgent)) return "Android WebView";
+  if (/iPhone|iPad|iPod/i.test(userAgent) && /AppleWebKit/i.test(userAgent) && !/Safari\//i.test(userAgent)) return "iOS WebView";
+  if (/Version\/[^ ]+.*Safari\//i.test(userAgent)) return "Safari";
+  if (/MSIE|Trident\//i.test(userAgent)) return "Internet Explorer";
   return "Other";
 }
 
