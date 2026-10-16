@@ -318,8 +318,26 @@ const themeColor = document.querySelector('meta[name="theme-color"]');
 const menuToggle = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#site-navigation");
 const protectedEmail = [28, 28, 30, 31, 24, 29, 24, 21, 109, 87, 71, 88, 3, 72, 73, 88, 3, 78, 67];
-let currentLanguage = localStorage.getItem("site-language") === "zh" ? "zh" : "en";
+// Every page load starts in English. Language changes are intentionally session-only.
+let currentLanguage = "en";
 let currentTheme = root.dataset.theme === "dark" ? "dark" : "light";
+
+function readStorage(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function decodeEmail() {
   return protectedEmail.map((value) => String.fromCharCode(value ^ 45)).join("");
@@ -344,6 +362,7 @@ const privacySummary = document.querySelector("#privacy-summary");
 const accessControlledRegions = document.querySelectorAll("body > header, body > main, body > footer");
 let pageViewTracked = false;
 let currentLocation = null;
+let sessionAnalyticsConsent = false;
 
 function getReferrerOrigin() {
   if (!document.referrer) return "";
@@ -355,7 +374,7 @@ function getReferrerOrigin() {
 }
 
 function hasAnalyticsConsent() {
-  return localStorage.getItem(analyticsConsentKey) === "accepted";
+  return sessionAnalyticsConsent || readStorage(analyticsConsentKey) === "accepted";
 }
 
 function setPageAccess(allowed) {
@@ -366,6 +385,7 @@ function setPageAccess(allowed) {
 }
 
 function setConsentDialog(open, mode = "prompt") {
+  root.classList.remove("privacy-pending");
   privacyConsent.hidden = !open;
   document.body.classList.toggle("privacy-dialog-open", open);
   privacyConsent.classList.toggle("privacy-consent--blocked", mode === "blocked");
@@ -444,25 +464,29 @@ document.querySelectorAll('[data-analytics-event="ppt_download_click"]').forEach
 });
 
 privacyAccept.addEventListener("click", async () => {
-  localStorage.setItem(analyticsConsentKey, "accepted");
+  sessionAnalyticsConsent = true;
+  writeStorage(analyticsConsentKey, "accepted");
   setConsentDialog(false);
   currentLocation = await requestCurrentLocation();
   trackPageView();
 });
 
 privacyDecline.addEventListener("click", () => {
-  localStorage.setItem(analyticsConsentKey, "declined");
+  sessionAnalyticsConsent = false;
+  writeStorage(analyticsConsentKey, "declined");
   setConsentDialog(true, "blocked");
 });
 
 privacySettings.addEventListener("click", () => setConsentDialog(true));
 privacyReconsider.addEventListener("click", () => setConsentDialog(true));
 
-if (localStorage.getItem(analyticsConsentKey) === "declined") {
+const storedAnalyticsConsent = readStorage(analyticsConsentKey);
+if (storedAnalyticsConsent === "declined") {
   setConsentDialog(true, "blocked");
-} else if (localStorage.getItem(analyticsConsentKey) === null) {
+} else if (storedAnalyticsConsent !== "accepted") {
   setConsentDialog(true);
 } else {
+  sessionAnalyticsConsent = true;
   setConsentDialog(false);
   requestLocationWithoutPrompt().then((location) => {
     currentLocation = location;
@@ -483,7 +507,7 @@ function applyTheme(theme, persist = true) {
   currentTheme = theme === "dark" ? "dark" : "light";
   root.dataset.theme = currentTheme;
   updateThemeControl();
-  if (persist) localStorage.setItem("site-theme", currentTheme);
+  if (persist) writeStorage("site-theme", currentTheme);
 }
 
 function applyLanguage(language) {
@@ -503,9 +527,12 @@ function applyLanguage(language) {
     const value = dictionary[key];
     if (value) element.setAttribute("aria-label", value);
   });
+  if (!privacyConsent.hidden && privacyConsent.classList.contains("privacy-consent--blocked")) {
+    privacyTitle.innerHTML = dictionary.privacyBlockedTitle;
+    privacySummary.innerHTML = dictionary.privacyBlockedSummary;
+  }
   languageToggle.textContent = language === "zh" ? "EN" : "中文";
   languageToggle.setAttribute("aria-label", language === "zh" ? "Switch to English" : "切换为中文");
-  localStorage.setItem("site-language", language);
   updateThemeControl();
 }
 

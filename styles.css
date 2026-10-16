@@ -513,6 +513,15 @@ footer a:hover, footer a:focus-visible { border-color: var(--accent); color: var
 .footer-actions button:hover, .footer-actions button:focus-visible { border-color: var(--accent); color: var(--ink); }
 
 .privacy-dialog-open { overflow: hidden; }
+html.privacy-pending body > header,
+html.privacy-pending body > main,
+html.privacy-pending body > footer,
+.privacy-dialog-open > header,
+.privacy-dialog-open > main,
+.privacy-dialog-open > footer {
+  visibility: hidden;
+  pointer-events: none;
+}
 [hidden] { display: none !important; }
 .privacy-consent[hidden] { display: none; }
 .privacy-consent { position: fixed; z-index: 1000; right: clamp(1rem, 3vw, 2.5rem); bottom: clamp(1rem, 3vw, 2.5rem); left: clamp(1rem, 3vw, 2.5rem); width: min(760px, calc(100% - 2rem)); max-height: calc(100vh - 2rem); margin-left: auto; overflow: auto; display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: end; padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid var(--accent); border-radius: 12px; background: var(--panel); color: var(--ink); box-shadow: 0 24px 80px rgba(0, 0, 0, .26); }

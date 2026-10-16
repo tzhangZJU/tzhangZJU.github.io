@@ -49,6 +49,20 @@ git push -u origin main
 
 首次发布或后续推送后，页面更新通常需要等待片刻。若浏览器仍显示旧内容，可进行强制刷新。
 
+## 访问统计查询
+
+D1 中的 IP 字段名为 `ip_address`。查看最新完整记录时可使用：
+
+```sql
+SELECT id, occurred_at, event_name, source_page, ip_address,
+       country, region, city, device, browser, operating_system,
+       consent_version, latitude, longitude, location_accuracy_m,
+       location_captured_at
+FROM analytics_events
+ORDER BY id DESC
+LIMIT 100;
+```
+
 ## 隐私与安全
 
 当前页面采用以下防护：
