@@ -314,6 +314,41 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
   });
 });
 
+const analyticsEndpoint = "https://homepage-analytics.zhangt91.workers.dev/events/ppt-click";
+
+function getReferrerOrigin() {
+  if (!document.referrer) return "";
+  try {
+    return new URL(document.referrer).origin;
+  } catch {
+    return "";
+  }
+}
+
+function trackPptDownload() {
+  const payload = JSON.stringify({
+    event: "ppt_download_click",
+    source_page: `${window.location.origin}${window.location.pathname}`,
+    referrer: getReferrerOrigin()
+  });
+
+  const data = new Blob([payload], { type: "text/plain;charset=UTF-8" });
+  if (navigator.sendBeacon && navigator.sendBeacon(analyticsEndpoint, data)) return;
+
+  fetch(analyticsEndpoint, {
+    method: "POST",
+    mode: "cors",
+    credentials: "omit",
+    keepalive: true,
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: payload
+  }).catch(() => {});
+}
+
+document.querySelectorAll('[data-analytics-event="ppt_download_click"]').forEach((link) => {
+  link.addEventListener("click", trackPptDownload);
+});
+
 function updateThemeControl() {
   const isDark = currentTheme === "dark";
   themeToggle.setAttribute("aria-pressed", String(isDark));
