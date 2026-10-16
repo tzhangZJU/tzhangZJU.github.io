@@ -65,6 +65,8 @@ LIMIT 100;
 
 核心交互使用独立的 `event_name`，包括导航、主题/语言切换、访谈、榜单、PPT 下载、项目主页、论文、GitHub、演示视频和联系方式等。按事件类型汇总点击量可使用：
 
+事件由前端元素的 `data-analytics-event` 标记统一触发，并在 Cloudflare Worker 中通过显式白名单校验；新增事件时应同步更新前端标记与 Worker 白名单。D1 主表 `analytics_events` 已移除旧版仅允许 `page_view`、`ppt_download_click` 的表级约束，迁移前的 5 条记录保存在备份表 `analytics_events_legacy_v2_20261017` 中。
+
 ```sql
 SELECT event_name, COUNT(*) AS event_count
 FROM analytics_events
