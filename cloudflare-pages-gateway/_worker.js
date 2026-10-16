@@ -1,4 +1,5 @@
 const ALLOWED_ORIGINS = new Set(["https://tzhangzju.github.io"]);
+const RETENTION_WINDOW = "-2 years";
 
 const ALLOWED_EVENTS = new Set([
   "analytics_consent_accept", "back_to_top_click", "contact_embodied_model_click",
@@ -233,6 +234,13 @@ export default {
       optionalNumber(location.accuracy),
       typeof location.captured_at === "string" ? location.captured_at.slice(0, 50) : null
     ).run();
+
+    // Apply rolling retention after successful writes. This keeps the database
+    // at a maximum two-year history without requiring a separate cron worker.
+    await env.DB.prepare(`
+      DELETE FROM analytics_events
+      WHERE occurred_at < datetime('now', ?)
+    `).bind(RETENTION_WINDOW).run();
 
     return json({ ok: true }, 201, headers);
   }

@@ -53,6 +53,8 @@ git push -u origin main
 
 前端统计入口为 `https://homepage-analytics-mobile.pages.dev/events`。该 Pages Function 与现有 `homepage-analytics` D1 数据库绑定，用于避开部分移动网络对 `workers.dev` 的 DNS 污染或阻断；原 Worker 可继续作为管理与历史实现保留。
 
+统计事件采用滚动两年保留策略。网关在每次成功写入后清理 `occurred_at` 早于当前时间两年的记录；从 6 个月延长到 2 年不会影响当前已有数据。
+
 D1 中的 IP 字段名为 `ip_address`，地址类型字段名为 `ip_version`（`IPv4` / `IPv6`）。查看最新完整记录时可使用：
 
 `referrer` 为空表示直接访问（手动输入、书签、二维码、新窗口等），或来源网站/浏览器隐私策略未提供 Referrer；这是浏览器层面的正常结果，不代表上报失败。前端只保留可用 Referrer 的 origin，不保留路径和查询参数。
