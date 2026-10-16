@@ -350,7 +350,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
   });
 });
 
-const analyticsEndpoint = "https://homepage-analytics.zhangt91.workers.dev/events";
+const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
