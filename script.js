@@ -351,6 +351,8 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 });
 
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
+// Bump this value for every frontend release so D1 records remain attributable.
+const analyticsConsentVersion = "v5-location-prompt";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -365,6 +367,7 @@ const privacySummary = document.querySelector("#privacy-summary");
 const accessControlledRegions = document.querySelectorAll("body > header, body > main, body > footer");
 let pageViewTracked = false;
 let currentLocation = null;
+let locationRequestInFlight = null;
 let sessionAnalyticsConsent = false;
 let analyticsFlushInProgress = false;
 let inMemoryAnalyticsQueue = [];
@@ -415,7 +418,7 @@ function enqueueAnalyticsEvent(eventName) {
     client_sent_at: new Date().toISOString(),
     source_page: `${window.location.origin}${window.location.pathname}`,
     referrer: getReferrerOrigin(),
-    consent_version: "v3-default",
+    consent_version: analyticsConsentVersion,
     location: currentLocation
   });
   writeAnalyticsQueue(queue);
@@ -456,7 +459,9 @@ function setConsentDialog(open, mode = "prompt") {
 }
 
 function requestCurrentLocation() {
-  return new Promise((resolve) => {
+  if (locationRequestInFlight) return locationRequestInFlight;
+
+  locationRequestInFlight = new Promise((resolve) => {
     if (!("geolocation" in navigator)) {
       resolve(null);
       return;
@@ -477,17 +482,45 @@ function requestCurrentLocation() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     );
   });
+
+  locationRequestInFlight.finally(() => {
+    locationRequestInFlight = null;
+  });
+  return locationRequestInFlight;
+}
+
+async function requestLocationAndTrack() {
+  const location = await requestCurrentLocation();
+  if (!location) return false;
+  currentLocation = location;
+  trackAnalyticsEvent("location_update");
+  return true;
+}
+
+function retryLocationOnFirstInteraction() {
+  const retry = () => {
+    window.removeEventListener("pointerdown", retry, true);
+    window.removeEventListener("keydown", retry, true);
+    if (!currentLocation) void requestLocationAndTrack();
+  };
+  window.addEventListener("pointerdown", retry, { once: true, capture: true });
+  window.addEventListener("keydown", retry, { once: true, capture: true });
 }
 
 function selectDistrict(localityData) {
   const administrative = localityData?.localityInfo?.administrative;
   if (Array.isArray(administrative)) {
     const district = [...administrative].reverse().find((item) => {
-      const code = typeof item?.chinaAdminCode === "string" ? item.chinaAdminCode : "";
+      const code = typeof item?.chinaAdminCode === "string"
+        ? item.chinaAdminCode.replace(/\D/g, "")
+        : "";
       return /^\d{6}$/.test(code) && !code.endsWith("00");
     });
     if (district?.name) {
-      return { name: district.name, code: district.chinaAdminCode || "" };
+      return {
+        name: district.name,
+        code: district.chinaAdminCode.replace(/\D/g, "")
+      };
     }
   }
   return { name: localityData?.locality || "", code: "" };
@@ -599,9 +632,11 @@ setConsentDialog(false);
 privacySettings.hidden = true;
 trackPageView();
 void flushAnalyticsQueue();
-requestCurrentLocation().then((location) => {
-  currentLocation = location;
-  if (currentLocation) trackAnalyticsEvent("location_update");
+requestLocationAndTrack().then((located) => {
+  // Some embedded/mobile browsers only surface the permission prompt after a
+  // user gesture. Retry once on the first interaction if the opening request
+  // was unavailable, timed out, or could not display a prompt.
+  if (!located) retryLocationOnFirstInteraction();
 });
 
 window.addEventListener("online", () => void flushAnalyticsQueue());

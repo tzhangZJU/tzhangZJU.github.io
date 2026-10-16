@@ -129,7 +129,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v3-default" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v5-location-prompt" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -203,7 +203,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 20) : "v2",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 20) : "v5-location-prompt",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),

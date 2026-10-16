@@ -76,7 +76,9 @@ LIMIT 100;
 
 移动端事件会先写入浏览器本地待发送队列，仅在 Worker 返回成功后移除。用户首次同意统计后，`analytics_consent_accept` 与 `page_view` 会立即上报，不再等待 GPS；定位成功后再通过独立的 `location_update` 事件补充经纬度。网络恢复、下次打开页面及页面转入后台时都会重试尚未确认送达的事件，以降低微信内置浏览器和移动网络切换造成的漏报。
 
-定位采用两级策略：没有 GPS 时使用 Cloudflare 的公网 IP 定位，`location_source=ip`；浏览器获得 GPS 权限后，通过 BigDataCloud 客户端逆地理编码补充 `district`、`district_code` 及更准确的省市信息，`location_source=gps_reverse_geocode`；逆地理编码失败但 GPS 可用时仍保留经纬度，`location_source=gps`。
+定位采用两级策略：页面打开时主动请求浏览器定位权限；没有 GPS 时使用 Cloudflare 的公网 IP 定位，`location_source=ip`；浏览器获得 GPS 权限后，通过 BigDataCloud 客户端逆地理编码补充 `district`、`district_code` 及更准确的省市信息，`location_source=gps_reverse_geocode`；逆地理编码失败但 GPS 可用时仍保留经纬度，`location_source=gps`。针对部分必须由用户手势触发权限提示的移动端或内嵌浏览器，首次自动请求失败后会在用户第一次点击或按键时重试一次。
+
+每次前端更新发布时，必须同时更新 `script.js` 中的 `analyticsConsentVersion`、`index.html` 中的脚本缓存版本，以及 Cloudflare 网关健康检查返回的 `consent_version`。
 
 检查移动端记录可使用：
 
@@ -124,7 +126,7 @@ GitHub Pages 不支持为仓库配置完整的自定义响应头。若迁移到�
 ```text
 Content-Security-Policy: default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src https://homepage-analytics-mobile.pages.dev https://homepage-analytics.zhangt91.workers.dev; form-action 'none'; frame-ancestors 'none'
 Referrer-Policy: no-referrer
-Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=()
 X-Content-Type-Options: nosniff
 Cross-Origin-Resource-Policy: same-origin
 ```
