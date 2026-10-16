@@ -146,12 +146,13 @@ const translations = {
     backTop: "返回顶部",
     privacySettings: "访问统计设置",
     privacyKicker: "PRIVACY · 访问统计",
-    privacyTitle: "是否同意访问统计？",
-    privacySummary: "经您主动同意后，本页会记录页面访问和 PPT 下载点击，以及 IP 地址、国家/地区/城市、设备类型、浏览器、操作系统、来源页面和访问时间，用于了解内容关注度与改进主页。",
-    privacyDetailsTitle: "查看处理规则",
-    privacyDetails: "个人信息处理者为 Tao Zhang，可通过本站邮件入口联系。数据由 Cloudflare Worker 写入私有 D1 数据库，仅用于本站访问分析，不用于广告或跨站跟踪；日志保留 30 天后删除。您可以拒绝或随时在页脚修改选择。撤回同意只影响之后的采集。",
-    privacyDecline: "拒绝",
-    privacyAccept: "同意并继续"
+    privacyTitle: "是否允许访问统计？",
+    privacySummary: "为改进主页内容并了解资料关注情况，本网站会在您同意后记录页面访问、及相关网络、位置信息。<br><br>数据由 Tao Zhang 管理，仅用于本站访问统计、分析，不用于广告或跨站跟踪，最长保存 6 个月。您可以拒绝，也可以随时在页脚撤回授权。",
+    privacyDecline: "不同意",
+    privacyAccept: "允许",
+    privacyBlockedTitle: "当前无法访问",
+    privacyBlockedSummary: "您已选择不同意访问统计，因此当前不能继续访问网页。如需进入，请重新选择。",
+    privacyReconsider: "重新选择"
   },
   en: {
     skip: "Skip to content",
@@ -299,11 +300,12 @@ const translations = {
     privacySettings: "Analytics settings",
     privacyKicker: "PRIVACY · VISITOR ANALYTICS",
     privacyTitle: "Allow visitor analytics?",
-    privacySummary: "Only after you actively consent, this site records page views and PPT download clicks together with your IP address, country/region/city, device type, browser, operating system, referring page, and visit time. The data is used to understand interest in the content and improve this site.",
-    privacyDetailsTitle: "View data-handling details",
-    privacyDetails: "The data controller is Tao Zhang, reachable through this site's email link. Data is written by a Cloudflare Worker to a private D1 database, used only for this site's analytics, never for advertising or cross-site tracking, and deleted after 30 days. You may decline or change your choice from the footer at any time. Withdrawal affects future collection only.",
+    privacySummary: "To improve this homepage and understand interest in its content, this site records page visits and related network and location information after you consent.<br><br>The data is managed by Tao Zhang and used only for this site's visitor statistics and analysis, never for advertising or cross-site tracking, and retained for up to six months. You may decline or withdraw your consent from the footer at any time.",
     privacyDecline: "Decline",
-    privacyAccept: "Allow analytics"
+    privacyAccept: "Allow",
+    privacyBlockedTitle: "Access is currently unavailable",
+    privacyBlockedSummary: "You declined visitor analytics, so this page cannot currently be accessed. To enter the site, please reconsider your choice.",
+    privacyReconsider: "Reconsider"
   }
 };
 
@@ -331,12 +333,17 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 });
 
 const analyticsEndpoint = "https://homepage-analytics.zhangt91.workers.dev/events";
-const analyticsConsentKey = "analytics-consent-v1";
+const analyticsConsentKey = "analytics-consent-v2";
 const privacyConsent = document.querySelector("#privacy-consent");
 const privacyAccept = document.querySelector("#privacy-accept");
 const privacyDecline = document.querySelector("#privacy-decline");
+const privacyReconsider = document.querySelector("#privacy-reconsider");
 const privacySettings = document.querySelector("#privacy-settings");
+const privacyTitle = document.querySelector("#privacy-title");
+const privacySummary = document.querySelector("#privacy-summary");
+const accessControlledRegions = document.querySelectorAll("body > header, body > main, body > footer");
 let pageViewTracked = false;
+let currentLocation = null;
 
 function getReferrerOrigin() {
   if (!document.referrer) return "";
@@ -351,10 +358,55 @@ function hasAnalyticsConsent() {
   return localStorage.getItem(analyticsConsentKey) === "accepted";
 }
 
-function setConsentDialog(open) {
+function setPageAccess(allowed) {
+  accessControlledRegions.forEach((region) => {
+    region.inert = !allowed;
+    region.setAttribute("aria-hidden", String(!allowed));
+  });
+}
+
+function setConsentDialog(open, mode = "prompt") {
   privacyConsent.hidden = !open;
   document.body.classList.toggle("privacy-dialog-open", open);
-  if (open) privacyAccept.focus();
+  privacyConsent.classList.toggle("privacy-consent--blocked", mode === "blocked");
+  privacyAccept.hidden = mode === "blocked";
+  privacyDecline.hidden = mode === "blocked";
+  privacyReconsider.hidden = mode !== "blocked";
+  privacyTitle.innerHTML = translations[currentLanguage][mode === "blocked" ? "privacyBlockedTitle" : "privacyTitle"];
+  privacySummary.innerHTML = translations[currentLanguage][mode === "blocked" ? "privacyBlockedSummary" : "privacySummary"];
+  setPageAccess(!open);
+  if (open) (mode === "blocked" ? privacyReconsider : privacyAccept).focus();
+}
+
+function requestCurrentLocation() {
+  return new Promise((resolve) => {
+    if (!("geolocation" in navigator)) {
+      resolve(null);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        captured_at: new Date(position.timestamp).toISOString()
+      }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    );
+  });
+}
+
+async function requestLocationWithoutPrompt() {
+  if (!("permissions" in navigator) || !("geolocation" in navigator)) return null;
+  try {
+    const permission = await navigator.permissions.query({ name: "geolocation" });
+    if (permission.state !== "granted") return null;
+    return requestCurrentLocation();
+  } catch {
+    return null;
+  }
 }
 
 function trackAnalyticsEvent(eventName) {
@@ -364,7 +416,8 @@ function trackAnalyticsEvent(eventName) {
     event: eventName,
     source_page: `${window.location.origin}${window.location.pathname}`,
     referrer: getReferrerOrigin(),
-    consent_version: "v1"
+    consent_version: "v2",
+    location: currentLocation
   });
 
   const data = new Blob([payload], { type: "text/plain;charset=UTF-8" });
@@ -390,23 +443,31 @@ document.querySelectorAll('[data-analytics-event="ppt_download_click"]').forEach
   link.addEventListener("click", () => trackAnalyticsEvent("ppt_download_click"));
 });
 
-privacyAccept.addEventListener("click", () => {
+privacyAccept.addEventListener("click", async () => {
   localStorage.setItem(analyticsConsentKey, "accepted");
   setConsentDialog(false);
+  currentLocation = await requestCurrentLocation();
   trackPageView();
 });
 
 privacyDecline.addEventListener("click", () => {
   localStorage.setItem(analyticsConsentKey, "declined");
-  setConsentDialog(false);
+  setConsentDialog(true, "blocked");
 });
 
 privacySettings.addEventListener("click", () => setConsentDialog(true));
+privacyReconsider.addEventListener("click", () => setConsentDialog(true));
 
-if (localStorage.getItem(analyticsConsentKey) === null) {
+if (localStorage.getItem(analyticsConsentKey) === "declined") {
+  setConsentDialog(true, "blocked");
+} else if (localStorage.getItem(analyticsConsentKey) === null) {
   setConsentDialog(true);
 } else {
-  trackPageView();
+  setConsentDialog(false);
+  requestLocationWithoutPrompt().then((location) => {
+    currentLocation = location;
+    trackPageView();
+  });
 }
 
 function updateThemeControl() {

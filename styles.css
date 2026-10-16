@@ -513,16 +513,16 @@ footer a:hover, footer a:focus-visible { border-color: var(--accent); color: var
 .footer-actions button:hover, .footer-actions button:focus-visible { border-color: var(--accent); color: var(--ink); }
 
 .privacy-dialog-open { overflow: hidden; }
+[hidden] { display: none !important; }
 .privacy-consent[hidden] { display: none; }
 .privacy-consent { position: fixed; z-index: 1000; right: clamp(1rem, 3vw, 2.5rem); bottom: clamp(1rem, 3vw, 2.5rem); left: clamp(1rem, 3vw, 2.5rem); width: min(760px, calc(100% - 2rem)); max-height: calc(100vh - 2rem); margin-left: auto; overflow: auto; display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: end; padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid var(--accent); border-radius: 12px; background: var(--panel); color: var(--ink); box-shadow: 0 24px 80px rgba(0, 0, 0, .26); }
 .privacy-consent::before { content: ""; position: fixed; z-index: -1; inset: 0; background: rgba(4, 11, 20, .48); backdrop-filter: blur(3px); }
 .privacy-consent .eyebrow { margin: 0 0 .55rem; font-size: .66rem; }
 .privacy-consent h2 { margin: 0 0 .65rem; font-size: clamp(1.25rem, 2vw, 1.65rem); line-height: 1.25; }
 .privacy-consent p { margin: 0; color: var(--muted-strong); font-size: .86rem; line-height: 1.65; }
-.privacy-consent details { margin-top: .65rem; color: var(--muted); font-size: .78rem; }
-.privacy-consent summary { width: fit-content; color: var(--accent); cursor: pointer; }
-.privacy-consent details p { margin-top: .5rem; font-size: .78rem; }
 .privacy-consent__actions { display: flex; gap: .65rem; white-space: nowrap; }
+.privacy-consent--blocked { width: min(560px, calc(100% - 2rem)); grid-template-columns: 1fr; align-items: stretch; }
+.privacy-consent--blocked .privacy-consent__actions { justify-content: flex-start; }
 .privacy-button { min-height: 42px; padding: .65rem .9rem; border: 1px solid var(--accent); font: inherit; font-size: .78rem; font-weight: 760; cursor: pointer; }
 .privacy-button--primary { background: var(--accent); color: var(--accent-ink); }
 .privacy-button--secondary { background: transparent; color: var(--ink); }
