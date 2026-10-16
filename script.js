@@ -459,15 +459,18 @@ function trackPageView() {
   trackAnalyticsEvent("page_view");
 }
 
-document.querySelectorAll('[data-analytics-event="ppt_download_click"]').forEach((link) => {
-  link.addEventListener("click", () => trackAnalyticsEvent("ppt_download_click"));
-});
+document.addEventListener("click", (event) => {
+  const analyticsTarget = event.target.closest("[data-analytics-event]");
+  if (!analyticsTarget) return;
+  trackAnalyticsEvent(analyticsTarget.dataset.analyticsEvent);
+}, { capture: true });
 
 privacyAccept.addEventListener("click", async () => {
   sessionAnalyticsConsent = true;
   writeStorage(analyticsConsentKey, "accepted");
   setConsentDialog(false);
   currentLocation = await requestCurrentLocation();
+  trackAnalyticsEvent("analytics_consent_accept");
   trackPageView();
 });
 

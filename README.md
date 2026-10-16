@@ -63,6 +63,26 @@ ORDER BY id DESC
 LIMIT 100;
 ```
 
+核心交互使用独立的 `event_name`，包括导航、主题/语言切换、访谈、榜单、PPT 下载、项目主页、论文、GitHub、演示视频和联系方式等。按事件类型汇总点击量可使用：
+
+```sql
+SELECT event_name, COUNT(*) AS event_count
+FROM analytics_events
+GROUP BY event_name
+ORDER BY event_count DESC, event_name;
+```
+
+查看最近的核心点击明细可使用：
+
+```sql
+SELECT id, occurred_at, event_name, ip_address, country, region, city,
+       device, browser, operating_system
+FROM analytics_events
+WHERE event_name <> 'page_view'
+ORDER BY id DESC
+LIMIT 100;
+```
+
 ## 隐私与安全
 
 当前页面采用以下防护：

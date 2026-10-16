@@ -22,7 +22,7 @@
     />
     <script src="theme-init.js"></script>
     <link rel="stylesheet" href="styles.css?v=20261017c" />
-    <script src="script.js?v=20261017c" defer></script>
+    <script src="script.js?v=20261017d" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main" data-i18n="skip">跳转到正文</a>
@@ -35,23 +35,24 @@
         aria-expanded="false"
         aria-controls="site-navigation"
         data-i18n-aria="openMenu"
+        data-analytics-event="mobile_menu_toggle_click"
       >
         <span></span><span></span>
       </button>
       <nav id="site-navigation" aria-label="主导航">
-        <a href="#about" data-i18n="navAbout">关于</a>
-        <a href="#system" data-i18n="navSystem">能力体系</a>
-        <a href="#work" data-i18n="navWork">成果与工作</a>
-        <a href="#papers" data-i18n="navPapers">论文</a>
-        <a href="#demos" data-i18n="navDemos">演示</a>
+        <a href="#about" data-i18n="navAbout" data-analytics-event="nav_about_click">关于</a>
+        <a href="#system" data-i18n="navSystem" data-analytics-event="nav_system_click">能力体系</a>
+        <a href="#work" data-i18n="navWork" data-analytics-event="nav_work_click">成果与工作</a>
+        <a href="#papers" data-i18n="navPapers" data-analytics-event="nav_papers_click">论文</a>
+        <a href="#demos" data-i18n="navDemos" data-analytics-event="nav_demos_click">演示</a>
       </nav>
       <div class="header-actions">
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="true">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="true" data-analytics-event="theme_toggle_click">
           <span class="theme-icon" aria-hidden="true">☼</span>
           <span id="theme-label">Light</span>
         </button>
-        <button id="language-toggle" class="language-toggle" type="button" aria-label="切换为中文">中文</button>
-        <a class="header-email email-icon-link" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail">
+        <button id="language-toggle" class="language-toggle" type="button" aria-label="切换为中文" data-analytics-event="language_toggle_click">中文</button>
+        <a class="header-email email-icon-link" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail" data-analytics-event="email_contact_click">
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M3.5 5.5h17v13h-17zM4 7l8 6 8-6" />
           </svg>
@@ -68,8 +69,8 @@
             魔法原子具身模型负责人<br />算法 VP
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="#work" data-i18n="viewWork">查看代表工作</a>
-            <a class="button primary email-icon-link email-icon-link--hero" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail">
+            <a class="button primary" href="#work" data-i18n="viewWork" data-analytics-event="hero_view_work_click">查看代表工作</a>
+            <a class="button primary email-icon-link email-icon-link--hero" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail" data-analytics-event="email_contact_click">
               <svg aria-hidden="true" viewBox="0 0 24 24">
                 <path d="M3.5 5.5h17v13h-17zM4 7l8 6 8-6" />
               </svg>
@@ -80,7 +81,7 @@
         <figure class="hero-visual">
           <img src="assets/interview-cover.png" alt="Tao Zhang 在 VLA 世界模型访谈中" />
           <figcaption>
-            <a href="https://weixin.qq.com/sph/Az0VNmUY9y" target="_blank" rel="noopener noreferrer" data-i18n="watchInterview">观看 VLA 世界模型访谈</a>
+            <a href="https://weixin.qq.com/sph/Az0VNmUY9y" target="_blank" rel="noopener noreferrer" data-i18n="watchInterview" data-analytics-event="vla_interview_click">观看 VLA 世界模型访谈</a>
           </figcaption>
         </figure>
       </section>
@@ -334,7 +335,7 @@
             <div class="metric-meta"><span>01</span><span>SIMULATION BENCHMARK</span></div>
             <div class="metric-value metric-rank"><span>TOP</span><strong>1</strong></div>
             <p class="metric-name" data-i18n="roboMetric">RoboDojo-Sim 榜单</p>
-            <a class="metric-proof metric-proof-image metric-proof-contain" href="assets/benchmarks/robodojo-sim-top1.png" target="_blank" rel="noopener noreferrer" aria-label="查看 RoboDojo-Sim Top 1 榜单截图">
+            <a class="metric-proof metric-proof-image metric-proof-contain" href="assets/benchmarks/robodojo-sim-top1.png" target="_blank" rel="noopener noreferrer" aria-label="查看 RoboDojo-Sim Top 1 榜单截图" data-analytics-event="robodojo_leaderboard_click">
               <img src="assets/benchmarks/robodojo-sim-top1.png" alt="RoboDojo-Sim 榜单截图，Magic-W0 平均分排名第一" loading="lazy" />
               <span data-i18n="roboProof">查看完整榜单</span>
             </a>
@@ -343,7 +344,7 @@
             <div class="metric-meta"><span>02</span><span>EMBODIED BENCHMARK</span></div>
             <div class="metric-value metric-rank"><span>TOP</span><strong>1</strong></div>
             <p class="metric-name" data-i18n="molmoMetric">MolmoSpaces 榜单</p>
-            <a class="metric-proof metric-proof-image" href="assets/benchmarks/molmospaces-top1.png" target="_blank" rel="noopener noreferrer" aria-label="查看 MolmoSpaces Top 1 榜单截图">
+            <a class="metric-proof metric-proof-image" href="assets/benchmarks/molmospaces-top1.png" target="_blank" rel="noopener noreferrer" aria-label="查看 MolmoSpaces Top 1 榜单截图" data-analytics-event="molmospaces_leaderboard_click">
               <img src="assets/benchmarks/molmospaces-top1.png" alt="MolmoSpaces Combined 榜单截图，MagicBrain 排名第一" loading="lazy" />
               <span data-i18n="molmoProof">查看完整榜单</span>
             </a>
@@ -387,7 +388,7 @@
         </div>
 
         <article class="project project-featured reveal">
-          <a class="project-media" href="https://embodied.magiclab.top/works/wam/magic-w0/index.html" target="_blank" rel="noopener noreferrer">
+          <a class="project-media" href="https://embodied.magiclab.top/works/wam/magic-w0/index.html" target="_blank" rel="noopener noreferrer" data-analytics-event="magic_w0_project_click">
             <img src="assets/magic-w0.png" alt="Magic-W0 结构化世界动作基础模型总览" loading="lazy" />
           </a>
           <div class="project-copy">
@@ -401,16 +402,16 @@
               <li>94.6% Real Robot</li>
             </ul>
             <div class="project-links">
-              <a href="https://embodied.magiclab.top/works/wam/magic-w0/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
-              <a href="https://arxiv.org/abs/2609.39870" target="_blank" rel="noopener noreferrer">Paper</a>
-              <a href="https://github.com/MagiclabRobotics/Magic-W0" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="https://embodied.magiclab.top/works/wam/magic-w0/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage" data-analytics-event="magic_w0_project_click">项目主页</a>
+              <a href="https://arxiv.org/abs/2609.39870" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_magic_w0_click">Paper</a>
+              <a href="https://github.com/MagiclabRobotics/Magic-W0" target="_blank" rel="noopener noreferrer" data-analytics-event="github_magic_w0_click">GitHub</a>
             </div>
           </div>
         </article>
 
         <div class="project-grid">
           <article class="project project-compact reveal">
-            <a class="project-media" href="https://embodied.magiclab.top/works/inference/zh/index.html" target="_blank" rel="noopener noreferrer">
+            <a class="project-media" href="https://embodied.magiclab.top/works/inference/zh/index.html" target="_blank" rel="noopener noreferrer" data-analytics-event="realtime_vla_project_click">
               <img src="assets/realtime-vla.png" alt="实时 VLA 分布式推理与执行架构" loading="lazy" />
             </a>
             <div class="project-copy">
@@ -418,15 +419,15 @@
               <h3>Toward Real-Time VLAs</h3>
               <p data-i18n="realtimeBody">把标准 Flow 的 10 步采样压缩到非均匀两步，并以系统级评测连接模型速度与真实双臂执行。</p>
               <div class="project-links">
-                <a href="https://embodied.magiclab.top/works/inference/zh/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
-                <a href="https://arxiv.org/abs/2609.39822" target="_blank" rel="noopener noreferrer">Paper</a>
-                <a href="https://github.com/MagiclabRobotics/Inference" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="https://embodied.magiclab.top/works/inference/zh/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage" data-analytics-event="realtime_vla_project_click">项目主页</a>
+                <a href="https://arxiv.org/abs/2609.39822" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_realtime_vla_click">Paper</a>
+                <a href="https://github.com/MagiclabRobotics/Inference" target="_blank" rel="noopener noreferrer" data-analytics-event="github_realtime_vla_click">GitHub</a>
               </div>
             </div>
           </article>
 
           <article class="project project-compact reveal">
-            <a class="project-media" href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer">
+            <a class="project-media" href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer" data-analytics-event="magic_brain_project_click">
               <img src="assets/magic-brain.png" alt="Magic-Brain 视觉引导管线" loading="lazy" />
             </a>
             <div class="project-copy">
@@ -434,15 +435,15 @@
               <h3>Magic-Brain</h3>
               <p data-i18n="brainBody">让上层 VLM 找目标、分割模型生成三色视觉协议、VLA 执行动作，把语义指令转化为可见引导。</p>
               <div class="project-links">
-                <a href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
-                <a href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer" data-i18n="chineseIntro">中文介绍</a>
-                <a href="https://embodied.magiclab.top/works/brain/en.html" target="_blank" rel="noopener noreferrer">English</a>
+                <a href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage" data-analytics-event="magic_brain_project_click">项目主页</a>
+                <a href="https://embodied.magiclab.top/works/brain/index.html" target="_blank" rel="noopener noreferrer" data-i18n="chineseIntro" data-analytics-event="magic_brain_chinese_article_click">中文介绍</a>
+                <a href="https://embodied.magiclab.top/works/brain/en.html" target="_blank" rel="noopener noreferrer" data-analytics-event="magic_brain_english_article_click">English</a>
               </div>
             </div>
           </article>
 
           <article class="project project-compact project-wide reveal">
-            <a class="project-media" href="https://embodied.magiclab.top/works/memory/index.html" target="_blank" rel="noopener noreferrer">
+            <a class="project-media" href="https://embodied.magiclab.top/works/memory/index.html" target="_blank" rel="noopener noreferrer" data-analytics-event="dual_stream_memory_project_click">
               <img src="assets/dual-stream-memory.svg" alt="Dual-Stream Memory 模型示意" loading="lazy" />
             </a>
             <div class="project-copy">
@@ -450,8 +451,8 @@
               <h3>Dual-Stream Memory</h3>
               <p data-i18n="memoryBody">以时序记忆追踪执行状态，以空间检索找回历史视觉证据，让 VLA 处理依赖历史的操作任务。</p>
               <div class="project-links">
-                <a href="https://embodied.magiclab.top/works/memory/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage">项目主页</a>
-                <a href="https://arxiv.org/pdf/2610.13262" target="_blank" rel="noopener noreferrer">Paper</a>
+                <a href="https://embodied.magiclab.top/works/memory/index.html" target="_blank" rel="noopener noreferrer" data-i18n="projectPage" data-analytics-event="dual_stream_memory_project_click">项目主页</a>
+                <a href="https://arxiv.org/pdf/2610.13262" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_dual_stream_memory_click">Paper</a>
               </div>
             </div>
           </article>
@@ -475,7 +476,7 @@
               <h3>Magic-W0: A Structured World–Action Foundation Model for Physical Intelligence</h3>
               <p>Xuhua Chen, Zhenhan Yin, Yuan Zhang, <strong>Tao Zhang*</strong>, et al.</p>
             </div>
-            <a href="https://arxiv.org/abs/2609.39870" target="_blank" rel="noopener noreferrer">arXiv</a>
+            <a href="https://arxiv.org/abs/2609.39870" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_magic_w0_click">arXiv</a>
           </article>
           <article class="paper-item paper-released reveal">
             <span class="paper-year">2026</span>
@@ -484,27 +485,27 @@
               <h3>Toward Real-Time VLAs: Stage-Aware Two-Step Flow Denoising and System-Level Evaluation</h3>
               <p>Di Wu, Rongtian Shen, Ping Liu, Yan Shen, Zhenhan Yin, Shun Zuo, Xuhua Chen, He Zheng, Lingfeng Zhang, Jianglin Zhang, <strong>Tao Zhang*</strong></p>
             </div>
-            <a href="https://arxiv.org/abs/2609.39822" target="_blank" rel="noopener noreferrer">arXiv</a>
+            <a href="https://arxiv.org/abs/2609.39822" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_realtime_vla_click">arXiv</a>
           </article>
           <article class="paper-item paper-released reveal">
             <span class="paper-year">2026</span>
             <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>RM-WAM: Reliable Memory-Augmented World Action Models for Long-Horizon Robot Manipulation</h3><p>Cui Miao, Junhao Yu, Ping Liu, Ning Yang, Xuhua Chen, He Zheng, Xiaodong Wang, <strong>Tao Zhang*</strong></p></div>
-            <a href="https://arxiv.org/pdf/2610.15305" target="_blank" rel="noopener noreferrer">arXiv</a>
+            <a href="https://arxiv.org/pdf/2610.15305" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_rm_wam_click">arXiv</a>
           </article>
           <article class="paper-item paper-released reveal">
             <span class="paper-year">2026</span>
             <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>Execution-Aligned Progressive Noise for Consistent Asynchronous Replanning in Generative Robot Policies</h3><p>Di Wu, Ping Liu, Xuhua Chen, He Zheng, Lingfeng Zhang, Rongtian Shen, <strong>Tao Zhang*</strong></p></div>
-            <a href="https://arxiv.org/abs/2610.06090" target="_blank" rel="noopener noreferrer">arXiv</a>
+            <a href="https://arxiv.org/abs/2610.06090" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_execution_aligned_noise_click">arXiv</a>
           </article>
           <article class="paper-item paper-released reveal">
             <span class="paper-year">2026</span>
             <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>Conditional Trajectory Peaks: Single-Pass Multimodal Policies over Action Chunks</h3><p>Di Wu, Rongtian Shen, Ping Liu, Xuhua Chen, He Zheng, Lingfeng Zhang, <strong>Tao Zhang*</strong></p></div>
-            <a href="https://arxiv.org/abs/2610.06104" target="_blank" rel="noopener noreferrer">arXiv</a>
+            <a href="https://arxiv.org/abs/2610.06104" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_trajectory_peaks_click">arXiv</a>
           </article>
           <article class="paper-item reveal">
             <span class="paper-year">2026</span>
             <div><p class="paper-venue">ICRA 2027 · UNDER REVIEW</p><h3>Dual-Stream Memory for Vision-Language-Action Policies</h3><p>Yang Wang, Ping Liu, Ruiyu Wang, Xuhua Chen, Lingfeng Zhang, <strong>Tao Zhang*</strong></p></div>
-            <a href="https://arxiv.org/pdf/2610.13262v1" target="_blank" rel="noopener noreferrer">arXiv</a>
+            <a href="https://arxiv.org/pdf/2610.13262v1" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_dual_stream_memory_click">arXiv</a>
           </article>
           <article class="paper-item reveal">
             <span class="paper-year">2026</span>
@@ -517,7 +518,7 @@
           <article class="paper-item reveal">
             <span class="paper-year">2026</span>
             <div><p class="paper-venue">ICLR 2027 · UNDER REVIEW</p><h3>TARSphere: A Robot-Oriented Full-Stack Framework for Long-Horizon Embodied Agents in Evolving Physical and Social Environments</h3><p>Yicheng Xu, Zhikai Xu, Ziyuan Chen, Yuhang Dong, <strong>Tao Zhang</strong>, Zhucun Xue, Yong Liu, Jiangning Zhang</p></div>
-            <a href="https://openreview.net/forum?id=eFi9w6vSHP" target="_blank" rel="noopener noreferrer">OpenReview</a>
+            <a href="https://openreview.net/forum?id=eFi9w6vSHP" target="_blank" rel="noopener noreferrer" data-analytics-event="paper_tarsphere_click">OpenReview</a>
           </article>
           <article class="paper-item reveal">
             <span class="paper-year">2026</span>
@@ -540,7 +541,7 @@
           <p data-i18n="demosNote">代表性真机演示与 WAIC、WRC、IFA 等展演。</p>
         </div>
         <div class="demo-grid">
-          <a class="demo-card reveal" href="assets/demos/fold-cloth-exhibition.mp4" target="_blank" rel="noopener noreferrer">
+          <a class="demo-card reveal" href="assets/demos/fold-cloth-exhibition.mp4" target="_blank" rel="noopener noreferrer" data-analytics-event="demo_fold_cloth_video_click">
             <div class="demo-media">
               <img src="assets/demos/fold-cloth-poster.png" alt="展会现场机器人折叠衣物" loading="lazy" />
               <span class="demo-play"><span class="demo-play-icon" aria-hidden="true">▶</span><span data-i18n="playVideo">播放视频</span></span>
@@ -554,7 +555,7 @@
               <p class="demo-fact"><strong data-i18n="demoDeploymentLabel">落地关注</strong><span data-i18n="foldClothDeployment">柔性操作、干扰后的恢复，以及连续处理所需的人工支持。</span></p>
             </div>
           </a>
-          <a class="demo-card reveal" href="assets/demos/fold-box-waic.mp4" target="_blank" rel="noopener noreferrer">
+          <a class="demo-card reveal" href="assets/demos/fold-box-waic.mp4" target="_blank" rel="noopener noreferrer" data-analytics-event="demo_fold_box_video_click">
             <div class="demo-media">
               <img src="assets/demos/fold-box-poster.png" alt="展会现场机器人进行纸箱封包" loading="lazy" />
               <span class="demo-play"><span class="demo-play-icon" aria-hidden="true">▶</span><span data-i18n="playVideo">播放视频</span></span>
@@ -568,7 +569,7 @@
               <p class="demo-fact"><strong data-i18n="demoDeploymentLabel">落地关注</strong><span data-i18n="foldBoxDeployment">折叠与封贴质量、失败重试，以及供料与成品转运。</span></p>
             </div>
           </a>
-          <a class="demo-card reveal" href="assets/demos/ink-rubbing-exhibition.mp4" target="_blank" rel="noopener noreferrer">
+          <a class="demo-card reveal" href="assets/demos/ink-rubbing-exhibition.mp4" target="_blank" rel="noopener noreferrer" data-analytics-event="demo_ink_rubbing_video_click">
             <div class="demo-media">
               <img src="assets/demos/ink-rubbing-poster.png" alt="展会现场机器人进行年画拓印" loading="lazy" />
               <span class="demo-play"><span class="demo-play-icon" aria-hidden="true">▶</span><span data-i18n="playVideo">播放视频</span></span>
@@ -589,15 +590,15 @@
         <p class="eyebrow" data-i18n="contactKicker">CONTACT · 合作交流</p>
         <h2 id="contact-title" data-i18n-html="contactTitle">关于具身智能、机器人基础模型<br />与研究协作，欢迎交流</h2>
         <div class="contact-row">
-          <a class="email-icon-link email-icon-link--contact" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail">
+          <a class="email-icon-link email-icon-link--contact" href="#contact" data-email-link aria-label="发送邮件" data-i18n-aria="sendEmail" data-analytics-event="email_contact_click">
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M3.5 5.5h17v13h-17zM4 7l8 6 8-6" />
             </svg>
             <span data-i18n="emailContact">邮件联系</span>
           </a>
-          <a href="https://github.com/tzhangZJU" target="_blank" rel="noopener noreferrer">GitHub · tzhangZJU</a>
-          <a href="https://embodied.magiclab.top/" target="_blank" rel="noopener noreferrer">EmbodiedModel</a>
-          <a href="https://www.zhihu.com/people/tao-zhang-19-69/posts" target="_blank" rel="noopener noreferrer">知乎</a>
+          <a href="https://github.com/tzhangZJU" target="_blank" rel="noopener noreferrer" data-analytics-event="contact_github_click">GitHub · tzhangZJU</a>
+          <a href="https://embodied.magiclab.top/" target="_blank" rel="noopener noreferrer" data-analytics-event="contact_embodied_model_click">EmbodiedModel</a>
+          <a href="https://www.zhihu.com/people/tao-zhang-19-69/posts" target="_blank" rel="noopener noreferrer" data-analytics-event="contact_zhihu_click">知乎</a>
         </div>
       </section>
     </main>
@@ -606,8 +607,8 @@
       <span>© <span id="year">2026</span> Tao Zhang</span>
       <span data-i18n="footerLine">Embodied AI · 从模型走向真实世界的行动</span>
       <div class="footer-actions">
-        <button id="privacy-settings" type="button" data-i18n="privacySettings">访问统计设置</button>
-        <a href="#home" data-i18n="backTop">返回顶部</a>
+        <button id="privacy-settings" type="button" data-i18n="privacySettings" data-analytics-event="privacy_settings_click">访问统计设置</button>
+        <a href="#home" data-i18n="backTop" data-analytics-event="back_to_top_click">返回顶部</a>
       </div>
     </footer>
 
