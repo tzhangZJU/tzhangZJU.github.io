@@ -55,14 +55,18 @@ git push -u origin main
 
 统计事件采用滚动两年保留策略。网关在每次成功写入后清理 `occurred_at` 早于当前时间两年的记录；从 6 个月延长到 2 年不会影响当前已有数据。
 
-D1 中的 IP 字段名为 `ip_address`，地址类型字段名为 `ip_version`（`IPv4` / `IPv6`）。查看最新完整记录时可使用：
+D1 的 `occurred_at` 由 `datetime('now')` 生成并按 UTC 保存；例如数据库中的 `2026-10-16 19:26:02` 对应北京时间 `2026-10-17 03:26:02`。保留 UTC 可避免跨时区和夏令时歧义，查询展示时使用 `datetime(occurred_at, '+8 hours')` 转为东八区。
+
+D1 中的 IP 字段名为 `ip_address`，地址类型字段名为 `ip_version`（`IPv4` / `IPv6`）。查看最新完整记录及东八区时间时可使用：
 
 `referrer` 为空表示直接访问（手动输入、书签、二维码、新窗口等），或来源网站/浏览器隐私策略未提供 Referrer；这是浏览器层面的正常结果，不代表上报失败。前端只保留可用 Referrer 的 origin，不保留路径和查询参数。
 
 浏览器识别覆盖常见桌面端、移动端、国产浏览器和 App 内置 WebView，包括 Chrome、Safari、Edge、Firefox、Opera、WeChat、WeCom、QQ Browser、飞书、钉钉、支付宝、淘宝、微博、抖音、小红书、华为、小米、vivo、OPPO、UC、夸克、360、搜狗、Samsung Internet 及 Android/iOS WebView 等。服务端只能依据浏览器提供的 User-Agent 判定；如果某些 Chromium 内核浏览器为了兼容性或隐私只声明为 Chrome，则无法可靠区分其真实品牌。
 
 ```sql
-SELECT id, occurred_at, event_name, source_page, ip_address, ip_version,
+SELECT id, occurred_at AS occurred_at_utc,
+       datetime(occurred_at, '+8 hours') AS occurred_at_cn,
+       event_name, source_page, ip_address, ip_version,
        country, region, city, district, district_code, location_source,
        device, browser, operating_system,
        consent_version, latitude, longitude, location_accuracy_m,
