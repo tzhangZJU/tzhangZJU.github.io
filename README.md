@@ -115,7 +115,7 @@ LIMIT 100;
 GitHub Pages 不支持为仓库配置完整的自定义响应头。若迁移到支持响应头的平台，建议至少设置：
 
 ```text
-Content-Security-Policy: default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'none'; form-action 'none'; frame-ancestors 'none'
+Content-Security-Policy: default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src https://homepage-analytics-mobile.pages.dev https://homepage-analytics.zhangt91.workers.dev; form-action 'none'; frame-ancestors 'none'
 Referrer-Policy: no-referrer
 Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 X-Content-Type-Options: nosniff
