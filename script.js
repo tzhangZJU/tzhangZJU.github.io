@@ -143,7 +143,15 @@ const translations = {
     inkRubbingDeployment: "拓印质量一致性、工具状态变化，以及多轮连续作业稳定性。",
     contactTitle: "关于具身智能、机器人基础模型<br>与研究协作，欢迎交流",
     footerLine: "Embodied AI · 从模型走向真实世界的行动",
-    backTop: "返回顶部"
+    backTop: "返回顶部",
+    privacySettings: "访问统计设置",
+    privacyKicker: "PRIVACY · 访问统计",
+    privacyTitle: "是否同意访问统计？",
+    privacySummary: "经您主动同意后，本页会记录页面访问和 PPT 下载点击，以及 IP 地址、国家/地区/城市、设备类型、浏览器、操作系统、来源页面和访问时间，用于了解内容关注度与改进主页。",
+    privacyDetailsTitle: "查看处理规则",
+    privacyDetails: "个人信息处理者为 Tao Zhang，可通过本站邮件入口联系。数据由 Cloudflare Worker 写入私有 D1 数据库，仅用于本站访问分析，不用于广告或跨站跟踪；日志保留 30 天后删除。您可以拒绝或随时在页脚修改选择。撤回同意只影响之后的采集。",
+    privacyDecline: "拒绝",
+    privacyAccept: "同意并继续"
   },
   en: {
     skip: "Skip to content",
@@ -287,7 +295,15 @@ const translations = {
     inkRubbingDeployment: "Print-quality consistency, tool-state changes, and stability across repeated continuous operation.",
     contactTitle: "For embodied AI, robot foundation models, <br>and research collaboration—let’s talk",
     footerLine: "Embodied AI · From models to real-world action",
-    backTop: "Back to top"
+    backTop: "Back to top",
+    privacySettings: "Analytics settings",
+    privacyKicker: "PRIVACY · VISITOR ANALYTICS",
+    privacyTitle: "Allow visitor analytics?",
+    privacySummary: "Only after you actively consent, this site records page views and PPT download clicks together with your IP address, country/region/city, device type, browser, operating system, referring page, and visit time. The data is used to understand interest in the content and improve this site.",
+    privacyDetailsTitle: "View data-handling details",
+    privacyDetails: "The data controller is Tao Zhang, reachable through this site's email link. Data is written by a Cloudflare Worker to a private D1 database, used only for this site's analytics, never for advertising or cross-site tracking, and deleted after 30 days. You may decline or change your choice from the footer at any time. Withdrawal affects future collection only.",
+    privacyDecline: "Decline",
+    privacyAccept: "Allow analytics"
   }
 };
 
@@ -314,7 +330,13 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
   });
 });
 
-const analyticsEndpoint = "https://homepage-analytics.zhangt91.workers.dev/events/ppt-click";
+const analyticsEndpoint = "https://homepage-analytics.zhangt91.workers.dev/events";
+const analyticsConsentKey = "analytics-consent-v1";
+const privacyConsent = document.querySelector("#privacy-consent");
+const privacyAccept = document.querySelector("#privacy-accept");
+const privacyDecline = document.querySelector("#privacy-decline");
+const privacySettings = document.querySelector("#privacy-settings");
+let pageViewTracked = false;
 
 function getReferrerOrigin() {
   if (!document.referrer) return "";
@@ -325,11 +347,24 @@ function getReferrerOrigin() {
   }
 }
 
-function trackPptDownload() {
+function hasAnalyticsConsent() {
+  return localStorage.getItem(analyticsConsentKey) === "accepted";
+}
+
+function setConsentDialog(open) {
+  privacyConsent.hidden = !open;
+  document.body.classList.toggle("privacy-dialog-open", open);
+  if (open) privacyAccept.focus();
+}
+
+function trackAnalyticsEvent(eventName) {
+  if (!hasAnalyticsConsent()) return;
+
   const payload = JSON.stringify({
-    event: "ppt_download_click",
+    event: eventName,
     source_page: `${window.location.origin}${window.location.pathname}`,
-    referrer: getReferrerOrigin()
+    referrer: getReferrerOrigin(),
+    consent_version: "v1"
   });
 
   const data = new Blob([payload], { type: "text/plain;charset=UTF-8" });
@@ -345,9 +380,34 @@ function trackPptDownload() {
   }).catch(() => {});
 }
 
+function trackPageView() {
+  if (pageViewTracked || !hasAnalyticsConsent()) return;
+  pageViewTracked = true;
+  trackAnalyticsEvent("page_view");
+}
+
 document.querySelectorAll('[data-analytics-event="ppt_download_click"]').forEach((link) => {
-  link.addEventListener("click", trackPptDownload);
+  link.addEventListener("click", () => trackAnalyticsEvent("ppt_download_click"));
 });
+
+privacyAccept.addEventListener("click", () => {
+  localStorage.setItem(analyticsConsentKey, "accepted");
+  setConsentDialog(false);
+  trackPageView();
+});
+
+privacyDecline.addEventListener("click", () => {
+  localStorage.setItem(analyticsConsentKey, "declined");
+  setConsentDialog(false);
+});
+
+privacySettings.addEventListener("click", () => setConsentDialog(true));
+
+if (localStorage.getItem(analyticsConsentKey) === null) {
+  setConsentDialog(true);
+} else {
+  trackPageView();
+}
 
 function updateThemeControl() {
   const isDark = currentTheme === "dark";

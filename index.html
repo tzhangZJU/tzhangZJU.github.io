@@ -605,7 +605,26 @@
     <footer>
       <span>© <span id="year">2026</span> Tao Zhang</span>
       <span data-i18n="footerLine">Embodied AI · 从模型走向真实世界的行动</span>
-      <a href="#home" data-i18n="backTop">返回顶部</a>
+      <div class="footer-actions">
+        <button id="privacy-settings" type="button" data-i18n="privacySettings">访问统计设置</button>
+        <a href="#home" data-i18n="backTop">返回顶部</a>
+      </div>
     </footer>
+
+    <aside id="privacy-consent" class="privacy-consent" role="dialog" aria-modal="true" aria-labelledby="privacy-title" aria-describedby="privacy-summary" hidden>
+      <div class="privacy-consent__copy">
+        <p class="eyebrow" data-i18n="privacyKicker">PRIVACY · 访问统计</p>
+        <h2 id="privacy-title" data-i18n="privacyTitle">是否同意访问统计？</h2>
+        <p id="privacy-summary" data-i18n="privacySummary">经您主动同意后，本页会记录页面访问和 PPT 下载点击，以及 IP 地址、国家/地区/城市、设备类型、浏览器、操作系统、来源页面和访问时间，用于了解内容关注度与改进主页。</p>
+        <details>
+          <summary data-i18n="privacyDetailsTitle">查看处理规则</summary>
+          <p data-i18n="privacyDetails">个人信息处理者为 Tao Zhang，可通过本站邮件入口联系。数据由 Cloudflare Worker 写入私有 D1 数据库，仅用于本站访问分析，不用于广告或跨站跟踪；日志保留 30 天后删除。您可以拒绝或随时在页脚修改选择。撤回同意只影响之后的采集。</p>
+        </details>
+      </div>
+      <div class="privacy-consent__actions">
+        <button id="privacy-decline" class="privacy-button privacy-button--secondary" type="button" data-i18n="privacyDecline">拒绝</button>
+        <button id="privacy-accept" class="privacy-button privacy-button--primary" type="button" data-i18n="privacyAccept">同意并继续</button>
+      </div>
+    </aside>
   </body>
 </html>
