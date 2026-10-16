@@ -67,6 +67,20 @@ LIMIT 100;
 
 事件由前端元素的 `data-analytics-event` 标记统一触发，并在 Cloudflare Worker 中通过显式白名单校验；新增事件时应同步更新前端标记与 Worker 白名单。D1 主表 `analytics_events` 已移除旧版仅允许 `page_view`、`ppt_download_click` 的表级约束，迁移前的 5 条记录保存在备份表 `analytics_events_legacy_v2_20261017` 中。
 
+移动端事件会先写入浏览器本地待发送队列，仅在 Worker 返回成功后移除。用户首次同意统计后，`analytics_consent_accept` 与 `page_view` 会立即上报，不再等待 GPS；定位成功后再通过独立的 `location_update` 事件补充经纬度。网络恢复、下次打开页面及页面转入后台时都会重试尚未确认送达的事件，以降低微信内置浏览器和移动网络切换造成的漏报。
+
+检查移动端记录可使用：
+
+```sql
+SELECT id, occurred_at, event_name, ip_address, country, region, city,
+       latitude, longitude, location_accuracy_m,
+       device, browser, operating_system
+FROM analytics_events
+WHERE device <> 'desktop'
+ORDER BY id DESC
+LIMIT 100;
+```
+
 ```sql
 SELECT event_name, COUNT(*) AS event_count
 FROM analytics_events

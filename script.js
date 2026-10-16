@@ -352,6 +352,9 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 
 const analyticsEndpoint = "https://homepage-analytics.zhangt91.workers.dev/events";
 const analyticsConsentKey = "analytics-consent-v2";
+const analyticsQueueKey = "analytics-pending-events-v1";
+const analyticsVisitorKey = "analytics-visitor-id-v1";
+const analyticsQueueLimit = 100;
 const privacyConsent = document.querySelector("#privacy-consent");
 const privacyAccept = document.querySelector("#privacy-accept");
 const privacyDecline = document.querySelector("#privacy-decline");
@@ -363,6 +366,60 @@ const accessControlledRegions = document.querySelectorAll("body > header, body >
 let pageViewTracked = false;
 let currentLocation = null;
 let sessionAnalyticsConsent = false;
+let analyticsFlushInProgress = false;
+let inMemoryAnalyticsQueue = [];
+
+function createAnalyticsId(prefix) {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return `${prefix}-${window.crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function getAnalyticsVisitorId() {
+  const storedId = readStorage(analyticsVisitorKey);
+  if (storedId) return storedId;
+  const visitorId = createAnalyticsId("visitor");
+  writeStorage(analyticsVisitorKey, visitorId);
+  return visitorId;
+}
+
+const analyticsSessionId = createAnalyticsId("session");
+const analyticsVisitorId = getAnalyticsVisitorId();
+
+function readAnalyticsQueue() {
+  try {
+    const storedQueue = readStorage(analyticsQueueKey);
+    if (!storedQueue) return [...inMemoryAnalyticsQueue];
+    const queue = JSON.parse(storedQueue);
+    if (!Array.isArray(queue)) return [...inMemoryAnalyticsQueue];
+    inMemoryAnalyticsQueue = queue;
+    return [...queue];
+  } catch {
+    return [...inMemoryAnalyticsQueue];
+  }
+}
+
+function writeAnalyticsQueue(queue) {
+  inMemoryAnalyticsQueue = queue.slice(-analyticsQueueLimit);
+  writeStorage(analyticsQueueKey, JSON.stringify(inMemoryAnalyticsQueue));
+}
+
+function enqueueAnalyticsEvent(eventName) {
+  const queue = readAnalyticsQueue();
+  queue.push({
+    event: eventName,
+    event_id: createAnalyticsId("event"),
+    visitor_id: analyticsVisitorId,
+    session_id: analyticsSessionId,
+    client_sent_at: new Date().toISOString(),
+    source_page: `${window.location.origin}${window.location.pathname}`,
+    referrer: getReferrerOrigin(),
+    consent_version: "v2",
+    location: currentLocation
+  });
+  writeAnalyticsQueue(queue);
+}
 
 function getReferrerOrigin() {
   if (!document.referrer) return "";
@@ -429,28 +486,44 @@ async function requestLocationWithoutPrompt() {
   }
 }
 
+async function flushAnalyticsQueue() {
+  if (analyticsFlushInProgress || !hasAnalyticsConsent()) return;
+  analyticsFlushInProgress = true;
+
+  try {
+    while (true) {
+      const queue = readAnalyticsQueue();
+      if (!queue.length) break;
+
+      const pendingEvent = queue[0];
+      let delivered = false;
+      try {
+        const response = await fetch(analyticsEndpoint, {
+          method: "POST",
+          mode: "cors",
+          credentials: "omit",
+          keepalive: true,
+          cache: "no-store",
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify(pendingEvent)
+        });
+        delivered = response.ok;
+      } catch {
+        delivered = false;
+      }
+
+      if (!delivered) break;
+      writeAnalyticsQueue(readAnalyticsQueue().filter((item) => item.event_id !== pendingEvent.event_id));
+    }
+  } finally {
+    analyticsFlushInProgress = false;
+  }
+}
+
 function trackAnalyticsEvent(eventName) {
   if (!hasAnalyticsConsent()) return;
-
-  const payload = JSON.stringify({
-    event: eventName,
-    source_page: `${window.location.origin}${window.location.pathname}`,
-    referrer: getReferrerOrigin(),
-    consent_version: "v2",
-    location: currentLocation
-  });
-
-  const data = new Blob([payload], { type: "text/plain;charset=UTF-8" });
-  if (navigator.sendBeacon && navigator.sendBeacon(analyticsEndpoint, data)) return;
-
-  fetch(analyticsEndpoint, {
-    method: "POST",
-    mode: "cors",
-    credentials: "omit",
-    keepalive: true,
-    headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: payload
-  }).catch(() => {});
+  enqueueAnalyticsEvent(eventName);
+  void flushAnalyticsQueue();
 }
 
 function trackPageView() {
@@ -469,14 +542,16 @@ privacyAccept.addEventListener("click", async () => {
   sessionAnalyticsConsent = true;
   writeStorage(analyticsConsentKey, "accepted");
   setConsentDialog(false);
-  currentLocation = await requestCurrentLocation();
   trackAnalyticsEvent("analytics_consent_accept");
   trackPageView();
+  currentLocation = await requestCurrentLocation();
+  if (currentLocation) trackAnalyticsEvent("location_update");
 });
 
 privacyDecline.addEventListener("click", () => {
   sessionAnalyticsConsent = false;
   writeStorage(analyticsConsentKey, "declined");
+  writeAnalyticsQueue([]);
   setConsentDialog(true, "blocked");
 });
 
@@ -491,11 +566,18 @@ if (storedAnalyticsConsent === "declined") {
 } else {
   sessionAnalyticsConsent = true;
   setConsentDialog(false);
+  trackPageView();
+  void flushAnalyticsQueue();
   requestLocationWithoutPrompt().then((location) => {
     currentLocation = location;
-    trackPageView();
+    if (currentLocation) trackAnalyticsEvent("location_update");
   });
 }
+
+window.addEventListener("online", () => void flushAnalyticsQueue());
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") void flushAnalyticsQueue();
+});
 
 function updateThemeControl() {
   const isDark = currentTheme === "dark";
