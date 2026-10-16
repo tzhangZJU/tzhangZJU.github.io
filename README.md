@@ -53,10 +53,10 @@ git push -u origin main
 
 前端统计入口为 `https://homepage-analytics-mobile.pages.dev/events`。该 Pages Function 与现有 `homepage-analytics` D1 数据库绑定，用于避开部分移动网络对 `workers.dev` 的 DNS 污染或阻断；原 Worker 可继续作为管理与历史实现保留。
 
-D1 中的 IP 字段名为 `ip_address`。查看最新完整记录时可使用：
+D1 中的 IP 字段名为 `ip_address`，地址类型字段名为 `ip_version`（`IPv4` / `IPv6`）。查看最新完整记录时可使用：
 
 ```sql
-SELECT id, occurred_at, event_name, source_page, ip_address,
+SELECT id, occurred_at, event_name, source_page, ip_address, ip_version,
        country, region, city, device, browser, operating_system,
        consent_version, latitude, longitude, location_accuracy_m,
        location_captured_at

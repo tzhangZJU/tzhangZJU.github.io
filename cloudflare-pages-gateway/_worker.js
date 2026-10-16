@@ -65,6 +65,13 @@ function optionalNumber(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function classifyIPVersion(ipAddress) {
+  if (typeof ipAddress !== "string" || !ipAddress) return "unknown";
+  if (ipAddress.includes(":")) return "IPv6";
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(ipAddress)) return "IPv4";
+  return "unknown";
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -72,7 +79,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v2" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v3-default" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -107,18 +114,21 @@ export default {
     const cf = request.cf || {};
     const location = body.location && typeof body.location === "object" ? body.location : {};
 
+    const ipAddress = request.headers.get("CF-Connecting-IP") || "unknown";
+
     await env.DB.prepare(`
       INSERT INTO analytics_events (
-        event_name, source_page, referrer, ip_address,
+        event_name, source_page, referrer, ip_address, ip_version,
         country, region, region_code, city, postal_code, timezone,
         device, browser, operating_system, consent_version,
         latitude, longitude, location_accuracy_m, location_captured_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.event,
       sourcePage,
       typeof body.referrer === "string" ? body.referrer.slice(0, 500) : "",
-      request.headers.get("CF-Connecting-IP") || "unknown",
+      ipAddress,
+      classifyIPVersion(ipAddress),
       cf.country || null,
       cf.region || null,
       cf.regionCode || null,

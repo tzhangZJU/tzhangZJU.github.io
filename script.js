@@ -415,7 +415,7 @@ function enqueueAnalyticsEvent(eventName) {
     client_sent_at: new Date().toISOString(),
     source_page: `${window.location.origin}${window.location.pathname}`,
     referrer: getReferrerOrigin(),
-    consent_version: "v2",
+    consent_version: "v3-default",
     location: currentLocation
   });
   writeAnalyticsQueue(queue);
@@ -431,7 +431,7 @@ function getReferrerOrigin() {
 }
 
 function hasAnalyticsConsent() {
-  return sessionAnalyticsConsent || readStorage(analyticsConsentKey) === "accepted";
+  return true;
 }
 
 function setPageAccess(allowed) {
@@ -558,21 +558,16 @@ privacyDecline.addEventListener("click", () => {
 privacySettings.addEventListener("click", () => setConsentDialog(true));
 privacyReconsider.addEventListener("click", () => setConsentDialog(true));
 
-const storedAnalyticsConsent = readStorage(analyticsConsentKey);
-if (storedAnalyticsConsent === "declined") {
-  setConsentDialog(true, "blocked");
-} else if (storedAnalyticsConsent !== "accepted") {
-  setConsentDialog(true);
-} else {
-  sessionAnalyticsConsent = true;
-  setConsentDialog(false);
-  trackPageView();
-  void flushAnalyticsQueue();
-  requestLocationWithoutPrompt().then((location) => {
-    currentLocation = location;
-    if (currentLocation) trackAnalyticsEvent("location_update");
-  });
-}
+sessionAnalyticsConsent = true;
+writeStorage(analyticsConsentKey, "accepted");
+setConsentDialog(false);
+privacySettings.hidden = true;
+trackPageView();
+void flushAnalyticsQueue();
+requestLocationWithoutPrompt().then((location) => {
+  currentLocation = location;
+  if (currentLocation) trackAnalyticsEvent("location_update");
+});
 
 window.addEventListener("online", () => void flushAnalyticsQueue());
 document.addEventListener("visibilitychange", () => {
