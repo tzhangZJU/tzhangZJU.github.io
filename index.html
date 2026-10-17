@@ -21,8 +21,8 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307111f'/%3E%3Cpath d='M15 18h34v8H36v24h-8V26H15z' fill='%235de1c2'/%3E%3C/svg%3E"
     />
     <script src="theme-init.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261017c" />
-    <script src="script.js?v=20261017q" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261017e" />
+    <script src="script.js?v=20261017t" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main" data-i18n="skip">跳转到正文</a>
@@ -622,6 +622,18 @@
         <button id="privacy-accept" class="privacy-button privacy-button--primary" type="button" data-i18n="privacyAccept">Allow</button>
         <button id="privacy-decline" class="privacy-button privacy-button--secondary" type="button" data-i18n="privacyDecline">Decline</button>
         <button id="privacy-reconsider" class="privacy-button privacy-button--primary" type="button" data-i18n="privacyReconsider" hidden>Reconsider</button>
+      </div>
+    </aside>
+
+    <aside id="location-permission-dialog" class="privacy-consent location-permission" role="dialog" aria-modal="true" aria-labelledby="location-permission-title" aria-describedby="location-permission-summary" hidden>
+      <div class="privacy-consent__copy">
+        <p class="eyebrow" data-i18n="locationPermissionKicker">LOCATION · 精确定位</p>
+        <h2 id="location-permission-title" data-i18n="locationPermissionTitle">请允许访问位置</h2>
+        <p id="location-permission-summary" data-i18n="locationPermissionSummary">为提高上海、江苏地区的位置统计精度，请在浏览器或微信设置中允许本站访问位置，然后点击重试。如暂不开启，本次访问将使用 IP 粗粒度定位。</p>
+      </div>
+      <div class="privacy-consent__actions">
+        <button id="location-permission-retry" class="privacy-button privacy-button--primary" type="button" data-i18n="locationPermissionRetry" data-analytics-event="location_permission_retry_click">已开启，重试</button>
+        <button id="location-permission-later" class="privacy-button privacy-button--secondary" type="button" data-i18n="locationPermissionLater" data-analytics-event="location_permission_later_click">暂不</button>
       </div>
     </aside>
   </body>

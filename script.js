@@ -152,7 +152,12 @@ const translations = {
     privacyAccept: "允许",
     privacyBlockedTitle: "当前无法访问",
     privacyBlockedSummary: "您已选择不同意访问统计，因此当前不能继续访问网页。如需进入，请重新选择。",
-    privacyReconsider: "重新选择"
+    privacyReconsider: "重新选择",
+    locationPermissionKicker: "LOCATION · 精确定位",
+    locationPermissionTitle: "请允许访问位置",
+    locationPermissionSummary: "为提高上海、江苏地区的位置统计精度，请在浏览器或微信设置中允许本站访问位置，然后点击重试。如暂不开启，本次访问将使用 IP 粗粒度定位。",
+    locationPermissionRetry: "已开启，重试",
+    locationPermissionLater: "暂不"
   },
   en: {
     skip: "Skip to content",
@@ -305,7 +310,12 @@ const translations = {
     privacyAccept: "Allow",
     privacyBlockedTitle: "Access is currently unavailable",
     privacyBlockedSummary: "You declined visitor analytics, so this page cannot currently be accessed. To enter the site, please reconsider your choice.",
-    privacyReconsider: "Reconsider"
+    privacyReconsider: "Reconsider",
+    locationPermissionKicker: "LOCATION · PRECISE POSITION",
+    locationPermissionTitle: "Allow location access",
+    locationPermissionSummary: "To improve location accuracy for visitors in Shanghai and Jiangsu, allow this site to access location in your browser or WeChat settings, then retry. If left disabled, this visit will use coarse IP-based location.",
+    locationPermissionRetry: "Enabled, retry",
+    locationPermissionLater: "Not now"
   }
 };
 
@@ -355,7 +365,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v12-regional-location-prompt";
+const analyticsConsentVersion = "v14-shanghai-jiangsu-location";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -367,6 +377,9 @@ const privacyReconsider = document.querySelector("#privacy-reconsider");
 const privacySettings = document.querySelector("#privacy-settings");
 const privacyTitle = document.querySelector("#privacy-title");
 const privacySummary = document.querySelector("#privacy-summary");
+const locationPermissionDialog = document.querySelector("#location-permission-dialog");
+const locationPermissionRetry = document.querySelector("#location-permission-retry");
+const locationPermissionLater = document.querySelector("#location-permission-later");
 const accessControlledRegions = document.querySelectorAll("body > header, body > main, body > footer");
 let pageViewTracked = false;
 let currentLocation = null;
@@ -556,16 +569,28 @@ async function shouldPromptForLocationByIp() {
   }
 }
 
+function setLocationPermissionReminder(open) {
+  locationPermissionDialog.hidden = !open;
+  if (open) locationPermissionRetry.focus();
+}
+
 function requestCurrentLocation() {
   if (locationRequestInFlight) return locationRequestInFlight;
 
   locationRequestInFlight = (async () => {
     const permissionState = await getLocationPermissionState();
-    if (permissionState === "unsupported" || permissionState === "denied") return null;
+    if (permissionState === "unsupported") return null;
 
     // Existing grants are used silently everywhere. New permission prompts are
     // limited to visitors whose Cloudflare IP location is Shanghai or Jiangsu.
-    if (permissionState !== "granted" && !(await shouldPromptForLocationByIp())) return null;
+    if (permissionState !== "granted") {
+      const shouldPrompt = await shouldPromptForLocationByIp();
+      if (!shouldPrompt) return null;
+      if (permissionState === "denied") {
+        setLocationPermissionReminder(true);
+        return null;
+      }
+    }
 
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
@@ -597,6 +622,20 @@ async function requestLocationAndTrack() {
   currentLocation = location;
   trackAnalyticsEvent("location_update");
   return true;
+}
+
+function retryLocationOnFirstInteraction() {
+  const retry = async () => {
+    window.removeEventListener("pointerdown", retry, true);
+    window.removeEventListener("keydown", retry, true);
+    if (currentLocation) return;
+    const permissionState = await getLocationPermissionState();
+    if (permissionState === "prompt" || permissionState === "unknown") {
+      void requestLocationAndTrack();
+    }
+  };
+  window.addEventListener("pointerdown", retry, { once: true, capture: true });
+  window.addEventListener("keydown", retry, { once: true, capture: true });
 }
 
 function selectDistrict(localityData) {
@@ -814,6 +853,11 @@ privacyDecline.addEventListener("click", () => {
 
 privacySettings.addEventListener("click", () => setConsentDialog(true));
 privacyReconsider.addEventListener("click", () => setConsentDialog(true));
+locationPermissionRetry.addEventListener("click", () => {
+  setLocationPermissionReminder(false);
+  void requestLocationAndTrack();
+});
+locationPermissionLater.addEventListener("click", () => setLocationPermissionReminder(false));
 
 sessionAnalyticsConsent = true;
 writeStorage(analyticsConsentKey, "accepted");
@@ -824,7 +868,11 @@ void flushAnalyticsQueue();
 // Existing grants are read silently. Visitors geolocated by IP to Shanghai or
 // Jiangsu may receive the browser permission prompt; all other unresolved or
 // denied states fall back to the server-side IP location path.
-void requestLocationAndTrack();
+requestLocationAndTrack().then((located) => {
+  // Embedded browsers may require a user gesture before showing their native
+  // permission prompt. Retry once, but only while permission is still undecided.
+  if (!located) retryLocationOnFirstInteraction();
+});
 
 window.addEventListener("online", () => void flushAnalyticsQueue());
 document.addEventListener("visibilitychange", () => {

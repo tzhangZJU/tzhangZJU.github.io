@@ -8,6 +8,7 @@ const ALLOWED_EVENTS = new Set([
   "demo_fold_cloth_video_click", "demo_ink_rubbing_video_click",
   "dual_stream_memory_project_click", "email_contact_click", "github_magic_w0_click",
   "github_realtime_vla_click", "hero_view_work_click", "language_toggle_click",
+  "location_permission_later_click", "location_permission_retry_click",
   "location_update", "magic_brain_chinese_article_click",
   "magic_brain_english_article_click", "magic_brain_project_click",
   "magic_w0_project_click", "mobile_menu_toggle_click", "molmospaces_leaderboard_click",
@@ -67,7 +68,9 @@ function shouldPromptForLocation(cf) {
   const regionCode = String(cf.regionCode || "").toUpperCase();
   if (regionCode === "SH" || regionCode === "JS") return true;
 
-  const coarseLocation = `${cf.region || ""} ${cf.city || ""}`.toLowerCase();
+  const region = String(cf.region || "").toLowerCase();
+  const city = String(cf.city || "").toLowerCase();
+  const coarseLocation = `${region} ${city}`;
   return coarseLocation.includes("shanghai")
     || coarseLocation.includes("jiangsu")
     || coarseLocation.includes("上海")
@@ -261,7 +264,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v12-regional-location-prompt" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v14-shanghai-jiangsu-location" }, 200, headers);
     }
 
     if (request.method === "GET" && url.pathname === "/location-policy") {
@@ -373,7 +376,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v12-regional-location-prompt",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v14-shanghai-jiangsu-location",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),

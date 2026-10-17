@@ -532,6 +532,7 @@ html.privacy-pending body > footer,
 .privacy-consent__actions { display: flex; gap: .65rem; white-space: nowrap; }
 .privacy-consent--blocked { width: min(560px, calc(100% - 2rem)); grid-template-columns: 1fr; align-items: stretch; }
 .privacy-consent--blocked .privacy-consent__actions { justify-content: flex-start; }
+.location-permission { z-index: 1001; }
 .privacy-button { min-height: 42px; padding: .65rem .9rem; border: 1px solid var(--accent); font: inherit; font-size: .78rem; font-weight: 760; cursor: pointer; }
 .privacy-button--primary { background: var(--accent); color: var(--accent-ink); }
 .privacy-button--secondary { background: transparent; color: var(--ink); }
