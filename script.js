@@ -353,8 +353,9 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 });
 
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
+const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v11-silent-location";
+const analyticsConsentVersion = "v12-regional-location-prompt";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -525,16 +526,32 @@ function setConsentDialog(open, mode = "prompt") {
   if (open) (mode === "blocked" ? privacyReconsider : privacyAccept).focus();
 }
 
-async function hasGrantedLocationPermission() {
-  if (!("geolocation" in navigator) || !navigator.permissions?.query) return false;
+async function getLocationPermissionState() {
+  if (!("geolocation" in navigator)) return "unsupported";
+  if (!navigator.permissions?.query) return "unknown";
 
   try {
     const permission = await navigator.permissions.query({ name: "geolocation" });
-    return permission.state === "granted";
+    return permission.state;
   } catch {
-    // Browsers or embedded webviews that cannot expose the permission state
-    // fall back to IP geolocation without calling getCurrentPosition. This
-    // prevents an unexpected permission prompt.
+    return "unknown";
+  }
+}
+
+async function shouldPromptForLocationByIp() {
+  try {
+    const response = await fetch(analyticsLocationPolicyEndpoint, {
+      method: "GET",
+      mode: "cors",
+      credentials: "omit",
+      cache: "no-store"
+    });
+    if (!response.ok) return false;
+    const policy = await response.json();
+    return policy.prompt_for_location === true;
+  } catch {
+    // A policy lookup failure must not block the page or unexpectedly request
+    // location. Analytics will continue with server-side IP geolocation.
     return false;
   }
 }
@@ -543,7 +560,12 @@ function requestCurrentLocation() {
   if (locationRequestInFlight) return locationRequestInFlight;
 
   locationRequestInFlight = (async () => {
-    if (!(await hasGrantedLocationPermission())) return null;
+    const permissionState = await getLocationPermissionState();
+    if (permissionState === "unsupported" || permissionState === "denied") return null;
+
+    // Existing grants are used silently everywhere. New permission prompts are
+    // limited to visitors whose Cloudflare IP location is Shanghai or Jiangsu.
+    if (permissionState !== "granted" && !(await shouldPromptForLocationByIp())) return null;
 
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
@@ -799,9 +821,9 @@ setConsentDialog(false);
 privacySettings.hidden = true;
 trackPageView();
 void flushAnalyticsQueue();
-// Read GPS only when the browser has already granted access. A prompt, denied
-// state, unsupported Permissions API, or query failure silently falls back to
-// the server-side IP location path.
+// Existing grants are read silently. Visitors geolocated by IP to Shanghai or
+// Jiangsu may receive the browser permission prompt; all other unresolved or
+// denied states fall back to the server-side IP location path.
 void requestLocationAndTrack();
 
 window.addEventListener("online", () => void flushAnalyticsQueue());

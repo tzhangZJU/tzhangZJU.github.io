@@ -46,7 +46,7 @@ const DISTRICT_NAMES = new Map([
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://tzhangzju.github.io",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     "Cache-Control": "no-store",
@@ -59,6 +59,19 @@ function json(body, status = 200, headers = {}) {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8", ...headers }
   });
+}
+
+function shouldPromptForLocation(cf) {
+  if (String(cf.country || "").toUpperCase() !== "CN") return false;
+
+  const regionCode = String(cf.regionCode || "").toUpperCase();
+  if (regionCode === "SH" || regionCode === "JS") return true;
+
+  const coarseLocation = `${cf.region || ""} ${cf.city || ""}`.toLowerCase();
+  return coarseLocation.includes("shanghai")
+    || coarseLocation.includes("jiangsu")
+    || coarseLocation.includes("上海")
+    || coarseLocation.includes("江苏");
 }
 
 function classifyDevice(userAgent) {
@@ -248,7 +261,17 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v11-silent-location" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v12-regional-location-prompt" }, 200, headers);
+    }
+
+    if (request.method === "GET" && url.pathname === "/location-policy") {
+      if (!ALLOWED_ORIGINS.has(origin)) {
+        return json({ ok: false, error: "origin_not_allowed" }, 403, headers);
+      }
+      return json({
+        ok: true,
+        prompt_for_location: shouldPromptForLocation(request.cf || {})
+      }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -350,7 +373,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v11-silent-location",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v12-regional-location-prompt",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
