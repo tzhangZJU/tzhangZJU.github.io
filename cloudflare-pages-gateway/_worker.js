@@ -262,7 +262,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v15-jiangsu-location-policy" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v15-location-policy" }, 200, headers);
     }
 
     if (request.method === "GET" && url.pathname === "/location-policy") {
@@ -374,7 +374,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v15-jiangsu-location-policy",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v15-location-policy",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
