@@ -78,6 +78,41 @@ LIMIT 100;
 
 核心交互使用独立的 `event_name`，包括导航、主题/语言切换、访谈、榜单、PPT 下载、项目主页、论文、GitHub、演示视频和联系方式等。按事件类型汇总点击量可使用：
 
+页面停留由 `page_stay` 事件记录，`duration_ms` 是页面打开后的累计时长，`active_duration_ms` 是页面实际处于前台可见状态的累计时长，`interaction_method` 标记 `heartbeat`、`hidden` 或 `pagehide`。资源获取使用 `resource_download_click` 与 `resource_media_open`，并记录去掉查询参数的 `resource_target`；复制、打印、另存页面和右键菜单也有独立事件。`screenshot_shortcut_attempt` 只代表网页收到了截图快捷键，系统级截图通常会被操作系统拦截，网页无法可靠确认截图是否完成。
+
+访问环境还记录公网 IP 推断坐标 `ip_latitude` / `ip_longitude`（与浏览器 GPS 坐标分开）、ASN、网络组织、Cloudflare 接入机房、都会区代码、洲、Cloudflare Ray ID、HTTP/TLS 协议与加密套件、请求优先级、TCP RTT、User-Agent、Client Hints、首选语言以及浏览器声明的 DNT/GPC 隐私信号。浏览器侧可用的时区和 UTC 偏移、语言、入口类型、窗口/屏幕尺寸、像素比、屏幕方向、平台、触控点数、CPU 并发数、设备内存、网络类型、节省流量状态、颜色与动效偏好、Cookie/联网状态及 UTM 来源参数保存在 `client_context_json`。浏览器或网络未暴露的字段保持为空，不做推测填充。
+
+查看最新的网络、位置与浏览器环境信息：
+
+```sql
+SELECT datetime(occurred_at, '+8 hours') AS occurred_at_cn,
+       event_name, ip_address, ip_version,
+       country, region, city, district, postal_code, location_source,
+       latitude, longitude, location_accuracy_m,
+       ip_latitude, ip_longitude, asn, as_organization,
+       edge_colo, metro_code, continent, cf_ray,
+       http_protocol, tls_version, tls_cipher, client_tcp_rtt_ms,
+       device, browser, operating_system, user_agent,
+       accept_language, sec_ch_ua, sec_ch_ua_mobile, sec_ch_ua_platform,
+       do_not_track, global_privacy_control, client_context_json
+FROM analytics_events
+ORDER BY id DESC
+LIMIT 100;
+```
+
+停留事件是累计快照；统计每个会话时应取 `MAX`，避免把 60 秒心跳重复相加：
+
+```sql
+SELECT session_id,
+       MAX(duration_ms) / 1000.0 AS elapsed_seconds,
+       MAX(active_duration_ms) / 1000.0 AS active_seconds
+FROM analytics_events
+WHERE event_name = 'page_stay'
+GROUP BY session_id
+ORDER BY MAX(id) DESC
+LIMIT 100;
+```
+
 事件由前端元素的 `data-analytics-event` 标记统一触发，并在 Cloudflare Worker 中通过显式白名单校验；新增事件时应同步更新前端标记与 Worker 白名单。D1 主表 `analytics_events` 已移除旧版仅允许 `page_view`、`ppt_download_click` 的表级约束，迁移前的 5 条记录保存在备份表 `analytics_events_legacy_v2_20261017` 中。
 
 移动端事件会先写入浏览器本地待发送队列，仅在 Worker 返回成功后移除。用户首次同意统计后，`analytics_consent_accept` 与 `page_view` 会立即上报，不再等待 GPS；定位成功后再通过独立的 `location_update` 事件补充经纬度。网络恢复、下次打开页面及页面转入后台时都会重试尚未确认送达的事件，以降低微信内置浏览器和移动网络切换造成的漏报。

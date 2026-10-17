@@ -3,7 +3,8 @@ const RETENTION_WINDOW = "-2 years";
 
 const ALLOWED_EVENTS = new Set([
   "analytics_consent_accept", "back_to_top_click", "contact_embodied_model_click",
-  "contact_github_click", "contact_zhihu_click", "demo_fold_box_video_click",
+  "contact_github_click", "contact_zhihu_click", "content_copy", "context_menu_open",
+  "demo_fold_box_video_click",
   "demo_fold_cloth_video_click", "demo_ink_rubbing_video_click",
   "dual_stream_memory_project_click", "email_contact_click", "github_magic_w0_click",
   "github_realtime_vla_click", "hero_view_work_click", "language_toggle_click",
@@ -11,11 +12,13 @@ const ALLOWED_EVENTS = new Set([
   "magic_brain_english_article_click", "magic_brain_project_click",
   "magic_w0_project_click", "mobile_menu_toggle_click", "molmospaces_leaderboard_click",
   "nav_about_click", "nav_demos_click", "nav_papers_click", "nav_system_click",
-  "nav_work_click", "page_view", "paper_dual_stream_memory_click",
+  "nav_work_click", "page_print_attempt", "page_save_shortcut_attempt", "page_stay",
+  "page_view", "paper_dual_stream_memory_click",
   "paper_execution_aligned_noise_click", "paper_magic_w0_click",
   "paper_realtime_vla_click", "paper_rm_wam_click", "paper_tarsphere_click",
   "paper_trajectory_peaks_click", "ppt_download_click", "privacy_settings_click",
-  "realtime_vla_project_click", "robodojo_leaderboard_click", "theme_toggle_click",
+  "realtime_vla_project_click", "resource_download_click", "resource_media_open",
+  "robodojo_leaderboard_click", "screenshot_shortcut_attempt", "theme_toggle_click",
   "vla_interview_click"
 ]);
 
@@ -124,6 +127,18 @@ function optionalNumber(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function optionalNumericValue(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function optionalNonNegativeInteger(value, maximum = Number.MAX_SAFE_INTEGER) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? Math.min(Math.round(value), maximum)
+    : null;
+}
+
 function optionalText(value, maxLength = 200) {
   return typeof value === "string" && value ? value.slice(0, maxLength) : null;
 }
@@ -154,7 +169,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v5-location-prompt" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v6-engagement" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -186,9 +201,17 @@ export default {
     }
 
     const userAgent = request.headers.get("User-Agent") || "";
+    const acceptLanguage = request.headers.get("Accept-Language") || "";
+    const cfRay = request.headers.get("CF-Ray") || "";
+    const secChUa = request.headers.get("Sec-CH-UA") || "";
+    const secChUaMobile = request.headers.get("Sec-CH-UA-Mobile") || "";
+    const secChUaPlatform = request.headers.get("Sec-CH-UA-Platform") || "";
+    const doNotTrack = request.headers.get("DNT") || "";
+    const globalPrivacyControl = request.headers.get("Sec-GPC") || "";
     const cf = request.cf || {};
     const location = body.location && typeof body.location === "object" ? body.location : {};
     const details = location.details && typeof location.details === "object" ? location.details : {};
+    const context = body.context && typeof body.context === "object" ? body.context : {};
     const latitude = optionalNumber(location.latitude);
     const longitude = optionalNumber(location.longitude);
     const hasGps = latitude !== null && latitude >= -90 && latitude <= 90
@@ -204,8 +227,15 @@ export default {
         country, region, region_code, city, postal_code, timezone,
         district, district_code, location_source, geocoding_provider,
         device, browser, operating_system, consent_version,
-        latitude, longitude, location_accuracy_m, location_captured_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        latitude, longitude, location_accuracy_m, location_captured_at,
+        duration_ms, active_duration_ms, resource_type, resource_target,
+        interaction_method, selected_text_length, ip_latitude, ip_longitude,
+        asn, as_organization, edge_colo, continent, http_protocol, tls_version,
+        client_tcp_rtt_ms, user_agent, accept_language, client_context_json,
+        cf_ray, metro_code, tls_cipher, request_priority,
+        sec_ch_ua, sec_ch_ua_mobile, sec_ch_ua_platform,
+        do_not_track, global_privacy_control
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.event,
       optionalText(body.event_id, 100),
@@ -228,11 +258,38 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 20) : "v5-location-prompt",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 20) : "v6-engagement",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
-      typeof location.captured_at === "string" ? location.captured_at.slice(0, 50) : null
+      typeof location.captured_at === "string" ? location.captured_at.slice(0, 50) : null,
+      optionalNonNegativeInteger(context.duration_ms, 604800000),
+      optionalNonNegativeInteger(context.active_duration_ms, 604800000),
+      optionalText(context.resource_type, 50),
+      optionalText(context.resource_target, 500),
+      optionalText(context.interaction_method, 50),
+      optionalNonNegativeInteger(context.selected_text_length, 1000000),
+      optionalNumericValue(cf.latitude),
+      optionalNumericValue(cf.longitude),
+      optionalNonNegativeInteger(cf.asn, 4294967295),
+      optionalText(cf.asOrganization, 200),
+      optionalText(cf.colo, 20),
+      optionalText(cf.continent, 10),
+      optionalText(cf.httpProtocol, 30),
+      optionalText(cf.tlsVersion, 30),
+      optionalNonNegativeInteger(cf.clientTcpRtt, 600000),
+      optionalText(userAgent, 500),
+      optionalText(acceptLanguage, 300),
+      JSON.stringify(context).slice(0, 4000),
+      optionalText(cfRay, 100),
+      optionalText(cf.metroCode, 30),
+      optionalText(cf.tlsCipher, 100),
+      optionalText(cf.requestPriority, 100),
+      optionalText(secChUa, 500),
+      optionalText(secChUaMobile, 20),
+      optionalText(secChUaPlatform, 100),
+      optionalText(doNotTrack, 20),
+      optionalText(globalPrivacyControl, 20)
     ).run();
 
     // Apply rolling retention after successful writes. This keeps the database

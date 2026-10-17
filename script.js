@@ -147,7 +147,7 @@ const translations = {
     privacySettings: "访问统计设置",
     privacyKicker: "PRIVACY · 访问统计",
     privacyTitle: "是否允许访问统计？",
-    privacySummary: "为改进主页内容并了解资料关注情况，本网站会在您同意后记录页面访问、及相关网络、位置信息。<br><br>数据由 Tao Zhang 管理，仅用于本站访问统计、分析，不用于广告或跨站跟踪，最长保存 6 个月。您可以拒绝，也可以随时在页脚撤回授权。",
+    privacySummary: "为改进主页内容并了解资料关注情况，本网站会记录页面访问、交互及相关网络、位置信息。<br><br>数据由 Tao Zhang 管理，仅用于本站访问统计、分析，不用于广告或跨站跟踪，最长保存 2 年。",
     privacyDecline: "不同意",
     privacyAccept: "允许",
     privacyBlockedTitle: "当前无法访问",
@@ -300,7 +300,7 @@ const translations = {
     privacySettings: "Analytics settings",
     privacyKicker: "PRIVACY · VISITOR ANALYTICS",
     privacyTitle: "Allow visitor analytics?",
-    privacySummary: "To improve this homepage and understand interest in its content, this site records page visits and related network and location information after you consent.<br><br>The data is managed by Tao Zhang and used only for this site's visitor statistics and analysis, never for advertising or cross-site tracking, and retained for up to six months. You may decline or withdraw your consent from the footer at any time.",
+    privacySummary: "To improve this homepage and understand interest in its content, this site records page visits, interactions, and related network and location information.<br><br>The data is managed by Tao Zhang, used only for this site's visitor statistics and analysis, never for advertising or cross-site tracking, and retained for up to two years.",
     privacyDecline: "Decline",
     privacyAccept: "Allow",
     privacyBlockedTitle: "Access is currently unavailable",
@@ -352,7 +352,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v5-location-prompt";
+const analyticsConsentVersion = "v6-engagement";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -371,6 +371,10 @@ let locationRequestInFlight = null;
 let sessionAnalyticsConsent = false;
 let analyticsFlushInProgress = false;
 let inMemoryAnalyticsQueue = [];
+const engagementStartedAt = Date.now();
+let visiblePeriodStartedAt = document.visibilityState === "visible" ? performance.now() : null;
+let accumulatedActiveDurationMs = 0;
+let lastEngagementReportDurationMs = -1;
 
 function createAnalyticsId(prefix) {
   if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -408,7 +412,57 @@ function writeAnalyticsQueue(queue) {
   writeStorage(analyticsQueueKey, JSON.stringify(inMemoryAnalyticsQueue));
 }
 
-function enqueueAnalyticsEvent(eventName) {
+function getClientEnvironmentContext() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
+  const userAgentData = navigator.userAgentData;
+  const urlParameters = new URLSearchParams(window.location.search);
+  let clientTimezone = "";
+  try {
+    clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  } catch {
+    clientTimezone = "";
+  }
+  return {
+    client_language: navigator.language || "",
+    client_languages: Array.isArray(navigator.languages) ? navigator.languages.slice(0, 10).join(",") : "",
+    client_timezone: clientTimezone,
+    client_utc_offset_minutes: new Date().getTimezoneOffset(),
+    platform: userAgentData?.platform || navigator.platform || "",
+    client_hint_brands: Array.isArray(userAgentData?.brands)
+      ? userAgentData.brands.slice(0, 10).map((brand) => `${brand.brand}/${brand.version}`).join(",")
+      : "",
+    client_hint_mobile: typeof userAgentData?.mobile === "boolean" ? userAgentData.mobile : null,
+    navigation_type: navigationEntry?.type || "",
+    viewport_width: window.innerWidth,
+    viewport_height: window.innerHeight,
+    screen_width: window.screen?.width || null,
+    screen_height: window.screen?.height || null,
+    screen_color_depth: window.screen?.colorDepth || null,
+    device_pixel_ratio: window.devicePixelRatio || 1,
+    touch_points: navigator.maxTouchPoints || 0,
+    hardware_concurrency: navigator.hardwareConcurrency || null,
+    device_memory_gb: navigator.deviceMemory || null,
+    screen_orientation: window.screen?.orientation?.type || "",
+    preferred_color_scheme: window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+    prefers_reduced_motion: Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
+    cookies_enabled: Boolean(navigator.cookieEnabled),
+    browser_online: Boolean(navigator.onLine),
+    do_not_track: navigator.doNotTrack || window.doNotTrack || "",
+    network_effective_type: connection?.effectiveType || "",
+    network_type: connection?.type || "",
+    network_downlink_mbps: typeof connection?.downlink === "number" ? connection.downlink : null,
+    network_rtt_ms: typeof connection?.rtt === "number" ? connection.rtt : null,
+    save_data: Boolean(connection?.saveData),
+    utm_source: urlParameters.get("utm_source") || "",
+    utm_medium: urlParameters.get("utm_medium") || "",
+    utm_campaign: urlParameters.get("utm_campaign") || "",
+    utm_content: urlParameters.get("utm_content") || "",
+    utm_term: urlParameters.get("utm_term") || ""
+  };
+}
+
+function enqueueAnalyticsEvent(eventName, context = null) {
   const queue = readAnalyticsQueue();
   queue.push({
     event: eventName,
@@ -419,7 +473,8 @@ function enqueueAnalyticsEvent(eventName) {
     source_page: `${window.location.origin}${window.location.pathname}`,
     referrer: getReferrerOrigin(),
     consent_version: analyticsConsentVersion,
-    location: currentLocation
+    location: currentLocation,
+    context: { ...getClientEnvironmentContext(), ...(context || {}) }
   });
   writeAnalyticsQueue(queue);
 }
@@ -588,10 +643,66 @@ async function flushAnalyticsQueue() {
   }
 }
 
-function trackAnalyticsEvent(eventName) {
+function trackAnalyticsEvent(eventName, context = null) {
   if (!hasAnalyticsConsent()) return;
-  enqueueAnalyticsEvent(eventName);
+  enqueueAnalyticsEvent(eventName, context);
   void flushAnalyticsQueue();
+}
+
+function pauseVisibleEngagement() {
+  if (visiblePeriodStartedAt === null) return;
+  accumulatedActiveDurationMs += Math.max(0, performance.now() - visiblePeriodStartedAt);
+  visiblePeriodStartedAt = null;
+}
+
+function resumeVisibleEngagement() {
+  if (visiblePeriodStartedAt === null) visiblePeriodStartedAt = performance.now();
+}
+
+function getActiveDurationMs() {
+  const currentVisibleDuration = visiblePeriodStartedAt === null
+    ? 0
+    : Math.max(0, performance.now() - visiblePeriodStartedAt);
+  return Math.round(accumulatedActiveDurationMs + currentVisibleDuration);
+}
+
+function reportPageStay(reason) {
+  const durationMs = Math.max(0, Date.now() - engagementStartedAt);
+  // visibilitychange(hidden) is normally followed immediately by pagehide.
+  // Suppress an effectively identical second record.
+  if (lastEngagementReportDurationMs >= 0 && durationMs - lastEngagementReportDurationMs < 1000) return;
+  lastEngagementReportDurationMs = durationMs;
+  trackAnalyticsEvent("page_stay", {
+    duration_ms: durationMs,
+    active_duration_ms: getActiveDurationMs(),
+    interaction_method: reason
+  });
+}
+
+function sanitizeResourceTarget(anchor) {
+  try {
+    const url = new URL(anchor.href, window.location.href);
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return "";
+  }
+}
+
+function classifyResource(anchor) {
+  if (!(anchor instanceof HTMLAnchorElement) || !anchor.href) return null;
+  const pathname = (() => {
+    try { return new URL(anchor.href, window.location.href).pathname.toLowerCase(); }
+    catch { return ""; }
+  })();
+  const extension = pathname.match(/\.([a-z0-9]{2,8})$/)?.[1] || "";
+  if (anchor.matches(".talk-download")) return { event: "resource_download_click", type: "pptx" };
+  if (anchor.hasAttribute("download") || /^(pdf|ppt|pptx|doc|docx|xls|xlsx|csv|zip|rar|7z)$/.test(extension)) {
+    return { event: "resource_download_click", type: extension || "file" };
+  }
+  if (/^(png|jpe?g|gif|webp|svg|mp4|webm|mov)$/.test(extension)) {
+    return { event: "resource_media_open", type: /^(mp4|webm|mov)$/.test(extension) ? "video" : "image" };
+  }
+  return null;
 }
 
 function trackPageView() {
@@ -602,8 +713,49 @@ function trackPageView() {
 
 document.addEventListener("click", (event) => {
   const analyticsTarget = event.target.closest("[data-analytics-event]");
-  if (!analyticsTarget) return;
-  trackAnalyticsEvent(analyticsTarget.dataset.analyticsEvent);
+  if (analyticsTarget) trackAnalyticsEvent(analyticsTarget.dataset.analyticsEvent);
+
+  const anchor = event.target.closest("a[href]");
+  const resource = classifyResource(anchor);
+  if (resource) {
+    trackAnalyticsEvent(resource.event, {
+      resource_type: resource.type,
+      resource_target: sanitizeResourceTarget(anchor),
+      interaction_method: "click"
+    });
+  }
+}, { capture: true });
+
+document.addEventListener("copy", () => {
+  trackAnalyticsEvent("content_copy", {
+    selected_text_length: Math.min(window.getSelection()?.toString().length || 0, 1000000),
+    interaction_method: "copy"
+  });
+});
+
+document.addEventListener("contextmenu", (event) => {
+  const resource = classifyResource(event.target.closest("a[href]"));
+  trackAnalyticsEvent("context_menu_open", {
+    resource_type: resource?.type || (event.target.closest("img, video") ? "media" : "page"),
+    interaction_method: "contextmenu"
+  });
+});
+
+window.addEventListener("beforeprint", () => {
+  trackAnalyticsEvent("page_print_attempt", { interaction_method: "beforeprint" });
+});
+
+document.addEventListener("keydown", (event) => {
+  const key = event.key.toLowerCase();
+  if ((event.metaKey || event.ctrlKey) && key === "s") {
+    trackAnalyticsEvent("page_save_shortcut_attempt", { interaction_method: "keyboard_shortcut" });
+  }
+  const screenshotShortcut = event.key === "PrintScreen"
+    || (event.metaKey && event.shiftKey && ["3", "4", "5"].includes(key))
+    || (/Windows/i.test(navigator.userAgent) && event.metaKey && event.shiftKey && key === "s");
+  if (screenshotShortcut) {
+    trackAnalyticsEvent("screenshot_shortcut_attempt", { interaction_method: "keyboard_shortcut" });
+  }
 }, { capture: true });
 
 privacyAccept.addEventListener("click", async () => {
@@ -641,8 +793,20 @@ requestLocationAndTrack().then((located) => {
 
 window.addEventListener("online", () => void flushAnalyticsQueue());
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") void flushAnalyticsQueue();
+  if (document.visibilityState === "hidden") {
+    pauseVisibleEngagement();
+    reportPageStay("hidden");
+    void flushAnalyticsQueue();
+  } else {
+    resumeVisibleEngagement();
+  }
 });
+window.addEventListener("pagehide", () => {
+  pauseVisibleEngagement();
+  reportPageStay("pagehide");
+  void flushAnalyticsQueue();
+});
+window.setInterval(() => reportPageStay("heartbeat"), 60000);
 
 function updateThemeControl() {
   const isDark = currentTheme === "dark";
