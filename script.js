@@ -354,7 +354,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v10-ip-district-inference";
+const analyticsConsentVersion = "v11-silent-location";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -525,30 +525,43 @@ function setConsentDialog(open, mode = "prompt") {
   if (open) (mode === "blocked" ? privacyReconsider : privacyAccept).focus();
 }
 
+async function hasGrantedLocationPermission() {
+  if (!("geolocation" in navigator) || !navigator.permissions?.query) return false;
+
+  try {
+    const permission = await navigator.permissions.query({ name: "geolocation" });
+    return permission.state === "granted";
+  } catch {
+    // Browsers or embedded webviews that cannot expose the permission state
+    // fall back to IP geolocation without calling getCurrentPosition. This
+    // prevents an unexpected permission prompt.
+    return false;
+  }
+}
+
 function requestCurrentLocation() {
   if (locationRequestInFlight) return locationRequestInFlight;
 
-  locationRequestInFlight = new Promise((resolve) => {
-    if (!("geolocation" in navigator)) {
-      resolve(null);
-      return;
-    }
+  locationRequestInFlight = (async () => {
+    if (!(await hasGrantedLocationPermission())) return null;
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const location = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          captured_at: new Date(position.timestamp).toISOString()
-        };
-        location.details = await reverseGeocodeLocation(location);
-        resolve(location);
-      },
-      () => resolve(null),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-    );
-  });
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            captured_at: new Date(position.timestamp).toISOString()
+          };
+          location.details = await reverseGeocodeLocation(location);
+          resolve(location);
+        },
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    });
+  })();
 
   locationRequestInFlight.finally(() => {
     locationRequestInFlight = null;
@@ -562,16 +575,6 @@ async function requestLocationAndTrack() {
   currentLocation = location;
   trackAnalyticsEvent("location_update");
   return true;
-}
-
-function retryLocationOnFirstInteraction() {
-  const retry = () => {
-    window.removeEventListener("pointerdown", retry, true);
-    window.removeEventListener("keydown", retry, true);
-    if (!currentLocation) void requestLocationAndTrack();
-  };
-  window.addEventListener("pointerdown", retry, { once: true, capture: true });
-  window.addEventListener("keydown", retry, { once: true, capture: true });
 }
 
 function selectDistrict(localityData) {
@@ -796,12 +799,10 @@ setConsentDialog(false);
 privacySettings.hidden = true;
 trackPageView();
 void flushAnalyticsQueue();
-requestLocationAndTrack().then((located) => {
-  // Some embedded/mobile browsers only surface the permission prompt after a
-  // user gesture. Retry once on the first interaction if the opening request
-  // was unavailable, timed out, or could not display a prompt.
-  if (!located) retryLocationOnFirstInteraction();
-});
+// Read GPS only when the browser has already granted access. A prompt, denied
+// state, unsupported Permissions API, or query failure silently falls back to
+// the server-side IP location path.
+void requestLocationAndTrack();
 
 window.addEventListener("online", () => void flushAnalyticsQueue());
 document.addEventListener("visibilitychange", () => {

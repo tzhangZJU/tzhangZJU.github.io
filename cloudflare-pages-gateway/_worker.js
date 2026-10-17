@@ -248,7 +248,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v10-ip-district-inference" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v11-silent-location" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -350,7 +350,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v10-ip-district-inference",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v11-silent-location",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
