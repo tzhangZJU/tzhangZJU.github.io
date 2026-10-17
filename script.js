@@ -354,7 +354,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v7-language-preference";
+const analyticsConsentVersion = "v8-page-stay-compact";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -466,6 +466,16 @@ function getClientEnvironmentContext() {
 
 function enqueueAnalyticsEvent(eventName, context = null) {
   const queue = readAnalyticsQueue();
+  // page_stay is a cumulative session snapshot. Keep only the newest pending
+  // snapshot so reconnecting after an offline period does not replay many
+  // obsolete durations for the same session.
+  if (eventName === "page_stay") {
+    for (let index = queue.length - 1; index >= 0; index -= 1) {
+      if (queue[index]?.event === "page_stay" && queue[index]?.session_id === analyticsSessionId) {
+        queue.splice(index, 1);
+      }
+    }
+  }
   queue.push({
     event: eventName,
     event_id: createAnalyticsId("event"),
@@ -808,7 +818,9 @@ window.addEventListener("pagehide", () => {
   reportPageStay("pagehide");
   void flushAnalyticsQueue();
 });
-window.setInterval(() => reportPageStay("heartbeat"), 60000);
+// A five-minute safety snapshot covers crashes or browsers that omit pagehide;
+// visibility/pagehide still records the latest value immediately.
+window.setInterval(() => reportPageStay("heartbeat"), 300000);
 
 function updateThemeControl() {
   const isDark = currentTheme === "dark";

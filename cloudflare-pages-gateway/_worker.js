@@ -169,7 +169,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v7-language-preference" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v8-page-stay-compact" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -220,6 +220,16 @@ export default {
 
     const ipAddress = request.headers.get("CF-Connecting-IP") || "unknown";
 
+    // page_stay is a cumulative session summary rather than a click stream.
+    // Replace the previous snapshot so reports contain one latest row per
+    // session instead of a new row for every heartbeat or visibility change.
+    if (body.event === "page_stay" && typeof body.session_id === "string" && body.session_id) {
+      await env.DB.prepare(`
+        DELETE FROM analytics_events
+        WHERE event_name = 'page_stay' AND session_id = ?
+      `).bind(body.session_id.slice(0, 100)).run();
+    }
+
     await env.DB.prepare(`
       INSERT INTO analytics_events (
         event_name, event_id, visitor_id, session_id,
@@ -258,7 +268,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v7-language-preference",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v8-page-stay-compact",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
