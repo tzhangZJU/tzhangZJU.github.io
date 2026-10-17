@@ -169,7 +169,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v8-page-stay-compact" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v9-page-stay-reliable" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -220,16 +220,6 @@ export default {
 
     const ipAddress = request.headers.get("CF-Connecting-IP") || "unknown";
 
-    // page_stay is a cumulative session summary rather than a click stream.
-    // Replace the previous snapshot so reports contain one latest row per
-    // session instead of a new row for every heartbeat or visibility change.
-    if (body.event === "page_stay" && typeof body.session_id === "string" && body.session_id) {
-      await env.DB.prepare(`
-        DELETE FROM analytics_events
-        WHERE event_name = 'page_stay' AND session_id = ?
-      `).bind(body.session_id.slice(0, 100)).run();
-    }
-
     await env.DB.prepare(`
       INSERT INTO analytics_events (
         event_name, event_id, visitor_id, session_id,
@@ -268,7 +258,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v8-page-stay-compact",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v9-page-stay-reliable",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
@@ -301,6 +291,28 @@ export default {
       optionalText(doNotTrack, 20),
       optionalText(globalPrivacyControl, 20)
     ).run();
+
+    // page_stay is a cumulative session summary rather than a click stream.
+    // Insert the newest snapshot first, then remove older snapshots. Keeping
+    // this order prevents a transient data gap if an insert ever fails.
+    if (body.event === "page_stay" && typeof body.session_id === "string" && body.session_id) {
+      try {
+        const sessionId = body.session_id.slice(0, 100);
+        await env.DB.prepare(`
+          DELETE FROM analytics_events
+          WHERE event_name = 'page_stay'
+            AND session_id = ?
+            AND id NOT IN (
+              SELECT MAX(id)
+              FROM analytics_events
+              WHERE event_name = 'page_stay' AND session_id = ?
+            )
+        `).bind(sessionId, sessionId).run();
+      } catch {
+        // The newly inserted snapshot remains available. A later snapshot will
+        // retry compaction, which is safer than failing or losing the summary.
+      }
+    }
 
     // Apply rolling retention after successful writes. This keeps the database
     // at a maximum two-year history without requiring a separate cron worker.

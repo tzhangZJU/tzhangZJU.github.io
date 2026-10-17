@@ -354,7 +354,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v8-page-stay-compact";
+const analyticsConsentVersion = "v9-page-stay-reliable";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -818,9 +818,10 @@ window.addEventListener("pagehide", () => {
   reportPageStay("pagehide");
   void flushAnalyticsQueue();
 });
-// A five-minute safety snapshot covers crashes or browsers that omit pagehide;
-// visibility/pagehide still records the latest value immediately.
-window.setInterval(() => reportPageStay("heartbeat"), 300000);
+// Keep an early one-minute safety snapshot so short visits are observable even
+// when an embedded/mobile browser omits visibilitychange or pagehide. The
+// server compacts these cumulative snapshots to one latest row per session.
+window.setInterval(() => reportPageStay("heartbeat"), 60000);
 
 function updateThemeControl() {
   const isDark = currentTheme === "dark";
