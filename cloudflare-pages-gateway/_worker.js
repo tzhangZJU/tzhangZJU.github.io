@@ -34,6 +34,15 @@ const DISTRICT_POSTAL_CODES = new Map([
   ["310151", "202150"]
 ]);
 
+const DISTRICT_NAMES = new Map([
+  ["310101", "黄浦区"], ["310104", "徐汇区"], ["310105", "长宁区"],
+  ["310106", "静安区"], ["310107", "普陀区"], ["310109", "虹口区"],
+  ["310110", "杨浦区"], ["310112", "闵行区"], ["310113", "宝山区"],
+  ["310114", "嘉定区"], ["310115", "浦东新区"], ["310116", "金山区"],
+  ["310117", "松江区"], ["310118", "青浦区"], ["310120", "奉贤区"],
+  ["310151", "崇明区"]
+]);
+
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://tzhangzju.github.io",
@@ -162,6 +171,76 @@ function resolvePostalCode(details, cf, hasReverseGeocode) {
   return providerPostalCode || districtPostalCode || cf.postalCode || null;
 }
 
+function selectDistrictFromReverseGeocode(data) {
+  const administrative = Array.isArray(data?.localityInfo?.administrative)
+    ? data.localityInfo.administrative
+    : [];
+  const district = [...administrative].reverse().find((item) => {
+    const code = String(item?.chinaAdminCode || "").replace(/\D/g, "");
+    return code.length >= 6 || Number(item?.adminLevel) >= 6;
+  });
+  const districtCode = String(district?.chinaAdminCode || "").replace(/\D/g, "");
+  const districtName = DISTRICT_NAMES.get(districtCode)
+    || optionalText(district?.name)
+    || optionalText(data?.locality);
+  if (!districtName) return null;
+
+  return {
+    country_code: optionalText(data?.countryCode, 10),
+    region: optionalText(data?.principalSubdivision),
+    region_code: optionalText(data?.principalSubdivisionCode, 30),
+    city: optionalText(data?.city) || optionalText(data?.locality),
+    district: districtName,
+    district_code: districtCode || null,
+    postal_code: optionalText(data?.postcode, 30),
+    provider: "BigDataCloud"
+  };
+}
+
+async function inferDistrictFromIpCoordinates(env, latitude, longitude) {
+  try {
+    const cached = await env.DB.prepare(`
+      SELECT country, region, region_code, city, district, district_code,
+             postal_code, geocoding_provider
+      FROM analytics_events
+      WHERE location_source = 'ip_reverse_geocode'
+        AND ip_latitude = ? AND ip_longitude = ?
+        AND district IS NOT NULL
+      ORDER BY id DESC
+      LIMIT 1
+    `).bind(latitude, longitude).first();
+    if (cached?.district) {
+      return {
+        country_code: cached.country,
+        region: cached.region,
+        region_code: cached.region_code,
+        city: cached.city,
+        district: cached.district,
+        district_code: cached.district_code,
+        postal_code: cached.postal_code,
+        provider: cached.geocoding_provider || "BigDataCloud"
+      };
+    }
+  } catch {
+    // A cache miss or transient D1 read failure should not block analytics.
+  }
+
+  try {
+    const endpoint = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+    endpoint.searchParams.set("latitude", String(latitude));
+    endpoint.searchParams.set("longitude", String(longitude));
+    endpoint.searchParams.set("localityLanguage", "en");
+    const response = await fetch(endpoint, {
+      headers: { "Accept": "application/json" },
+      signal: AbortSignal.timeout(2500)
+    });
+    if (!response.ok) return null;
+    return selectDistrictFromReverseGeocode(await response.json());
+  } catch {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -169,7 +248,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v9-page-stay-reliable" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v10-ip-district-inference" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname === "/events") {
@@ -216,7 +295,14 @@ export default {
     const longitude = optionalNumber(location.longitude);
     const hasGps = latitude !== null && latitude >= -90 && latitude <= 90
       && longitude !== null && longitude >= -180 && longitude <= 180;
-    const hasReverseGeocode = hasGps && optionalText(details.district);
+    const ipLatitude = optionalNumericValue(cf.latitude);
+    const ipLongitude = optionalNumericValue(cf.longitude);
+    const ipDetails = !hasGps && ipLatitude !== null && ipLongitude !== null
+      ? await inferDistrictFromIpCoordinates(env, ipLatitude, ipLongitude)
+      : null;
+    const effectiveDetails = hasGps ? details : (ipDetails || {});
+    const hasGpsReverseGeocode = hasGps && optionalText(details.district);
+    const hasIpReverseGeocode = !hasGps && optionalText(ipDetails?.district);
 
     const ipAddress = request.headers.get("CF-Connecting-IP") || "unknown";
 
@@ -245,20 +331,26 @@ export default {
       typeof body.referrer === "string" ? body.referrer.slice(0, 500) : "",
       ipAddress,
       classifyIPVersion(ipAddress),
-      hasGps ? (optionalText(details.country_code, 10) || cf.country || null) : (cf.country || null),
-      hasGps ? (optionalText(details.region) || cf.region || null) : (cf.region || null),
-      hasGps ? (optionalText(details.region_code, 30) || cf.regionCode || null) : (cf.regionCode || null),
-      hasGps ? (optionalText(details.city) || cf.city || null) : (cf.city || null),
-      hasGps ? resolvePostalCode(details, cf, hasReverseGeocode) : (cf.postalCode || null),
+      optionalText(effectiveDetails.country_code, 10) || cf.country || null,
+      optionalText(effectiveDetails.region) || cf.region || null,
+      optionalText(effectiveDetails.region_code, 30) || cf.regionCode || null,
+      optionalText(effectiveDetails.city) || cf.city || null,
+      (hasGpsReverseGeocode || hasIpReverseGeocode)
+        ? resolvePostalCode(effectiveDetails, cf, true)
+        : (cf.postalCode || null),
       cf.timezone || null,
-      hasGps ? optionalText(details.district) : null,
-      hasGps ? optionalText(details.district_code, 30) : null,
-      hasReverseGeocode ? "gps_reverse_geocode" : (hasGps ? "gps" : "ip"),
-      hasReverseGeocode ? optionalText(details.provider, 50) : null,
+      optionalText(effectiveDetails.district),
+      optionalText(effectiveDetails.district_code, 30),
+      hasGpsReverseGeocode
+        ? "gps_reverse_geocode"
+        : (hasIpReverseGeocode ? "ip_reverse_geocode" : (hasGps ? "gps" : "ip")),
+      (hasGpsReverseGeocode || hasIpReverseGeocode)
+        ? optionalText(effectiveDetails.provider, 50)
+        : null,
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v9-page-stay-reliable",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v10-ip-district-inference",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
@@ -269,8 +361,8 @@ export default {
       optionalText(context.resource_target, 500),
       optionalText(context.interaction_method, 50),
       optionalNonNegativeInteger(context.selected_text_length, 1000000),
-      optionalNumericValue(cf.latitude),
-      optionalNumericValue(cf.longitude),
+      ipLatitude,
+      ipLongitude,
       optionalNonNegativeInteger(cf.asn, 4294967295),
       optionalText(cf.asOrganization, 200),
       optionalText(cf.colo, 20),
