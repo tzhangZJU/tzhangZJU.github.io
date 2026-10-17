@@ -318,8 +318,10 @@ const themeColor = document.querySelector('meta[name="theme-color"]');
 const menuToggle = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#site-navigation");
 const protectedEmail = [28, 28, 30, 31, 24, 29, 24, 21, 109, 87, 71, 88, 3, 72, 73, 88, 3, 78, 67];
-// Every page load starts in English. Language changes are intentionally session-only.
-let currentLanguage = "en";
+const languageStorageKey = "site-language";
+const storedLanguage = readStorage(languageStorageKey);
+// Prefer an explicit saved choice; first-time and unavailable-storage visits start in Chinese.
+let currentLanguage = storedLanguage === "en" || storedLanguage === "zh" ? storedLanguage : "zh";
 let currentTheme = root.dataset.theme === "dark" ? "dark" : "light";
 
 function readStorage(key) {
@@ -352,7 +354,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v6-engagement";
+const analyticsConsentVersion = "v7-language-preference";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -824,10 +826,10 @@ function applyTheme(theme, persist = true) {
   if (persist) writeStorage("site-theme", currentTheme);
 }
 
-function applyLanguage(language) {
-  currentLanguage = language;
-  const dictionary = translations[language];
-  root.lang = language === "zh" ? "zh-CN" : "en";
+function applyLanguage(language, persist = true) {
+  currentLanguage = language === "en" ? "en" : "zh";
+  const dictionary = translations[currentLanguage];
+  root.lang = currentLanguage === "zh" ? "zh-CN" : "en";
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     const value = dictionary[element.dataset.i18n];
     if (value) element.textContent = value;
@@ -845,9 +847,10 @@ function applyLanguage(language) {
     privacyTitle.innerHTML = dictionary.privacyBlockedTitle;
     privacySummary.innerHTML = dictionary.privacyBlockedSummary;
   }
-  languageToggle.textContent = language === "zh" ? "EN" : "中文";
-  languageToggle.setAttribute("aria-label", language === "zh" ? "Switch to English" : "切换为中文");
+  languageToggle.textContent = currentLanguage === "zh" ? "EN" : "中文";
+  languageToggle.setAttribute("aria-label", currentLanguage === "zh" ? "Switch to English" : "切换为中文");
   updateThemeControl();
+  if (persist) writeStorage(languageStorageKey, currentLanguage);
 }
 
 function closeMenu() {
@@ -908,5 +911,5 @@ if (reduceMotion || !("IntersectionObserver" in window)) {
 
 document.querySelector("#year").textContent = new Date().getFullYear();
 applyTheme(currentTheme, false);
-applyLanguage(currentLanguage);
+applyLanguage(currentLanguage, false);
 updateActiveNavigation();
