@@ -66,14 +66,12 @@ function shouldPromptForLocation(cf) {
   if (String(cf.country || "").toUpperCase() !== "CN") return false;
 
   const regionCode = String(cf.regionCode || "").toUpperCase();
-  if (regionCode === "SH" || regionCode === "JS") return true;
+  if (regionCode === "JS") return true;
 
   const region = String(cf.region || "").toLowerCase();
   const city = String(cf.city || "").toLowerCase();
   const coarseLocation = `${region} ${city}`;
-  return coarseLocation.includes("shanghai")
-    || coarseLocation.includes("jiangsu")
-    || coarseLocation.includes("上海")
+  return coarseLocation.includes("jiangsu")
     || coarseLocation.includes("江苏");
 }
 
@@ -264,7 +262,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v14-shanghai-jiangsu-location" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v15-jiangsu-location-policy" }, 200, headers);
     }
 
     if (request.method === "GET" && url.pathname === "/location-policy") {
@@ -376,7 +374,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v14-shanghai-jiangsu-location",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v15-jiangsu-location-policy",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),

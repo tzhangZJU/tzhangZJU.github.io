@@ -155,7 +155,7 @@ const translations = {
     privacyReconsider: "重新选择",
     locationPermissionKicker: "LOCATION · 精确定位",
     locationPermissionTitle: "请允许访问位置",
-    locationPermissionSummary: "为提高上海、江苏地区的位置统计精度，请在浏览器或微信设置中允许本站访问位置，然后点击重试。如暂不开启，本次访问将使用 IP 粗粒度定位。",
+    locationPermissionSummary: "为提高江苏地区的位置统计精度，请在浏览器或微信设置中允许本站访问位置，然后点击重试。如暂不开启，本次访问将使用 IP 粗粒度定位。",
     locationPermissionRetry: "已开启，重试",
     locationPermissionLater: "暂不"
   },
@@ -313,7 +313,7 @@ const translations = {
     privacyReconsider: "Reconsider",
     locationPermissionKicker: "LOCATION · PRECISE POSITION",
     locationPermissionTitle: "Allow location access",
-    locationPermissionSummary: "To improve location accuracy for visitors in Shanghai and Jiangsu, allow this site to access location in your browser or WeChat settings, then retry. If left disabled, this visit will use coarse IP-based location.",
+    locationPermissionSummary: "To improve location accuracy for visitors in Jiangsu, allow this site to access location in your browser or WeChat settings, then retry. If left disabled, this visit will use coarse IP-based location.",
     locationPermissionRetry: "Enabled, retry",
     locationPermissionLater: "Not now"
   }
@@ -365,7 +365,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v14-shanghai-jiangsu-location";
+const analyticsConsentVersion = "v15-jiangsu-location-policy";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -582,7 +582,7 @@ function requestCurrentLocation() {
     if (permissionState === "unsupported") return null;
 
     // Existing grants are used silently everywhere. New permission prompts are
-    // limited to visitors whose Cloudflare IP location is Shanghai or Jiangsu.
+    // limited to visitors whose Cloudflare IP location is Jiangsu.
     if (permissionState !== "granted") {
       const shouldPrompt = await shouldPromptForLocationByIp();
       if (!shouldPrompt) return null;
@@ -865,8 +865,8 @@ setConsentDialog(false);
 privacySettings.hidden = true;
 trackPageView();
 void flushAnalyticsQueue();
-// Existing grants are read silently. Visitors geolocated by IP to Shanghai or
-// Jiangsu may receive the browser permission prompt; all other unresolved or
+// Existing grants are read silently. Visitors geolocated by IP to Jiangsu may
+// receive the browser permission prompt; all other unresolved or
 // denied states fall back to the server-side IP location path.
 requestLocationAndTrack().then((located) => {
   // Embedded browsers may require a user gesture before showing their native
