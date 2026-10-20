@@ -117,6 +117,8 @@ const translations = {
     magicW0Body: "用统一状态动作接口、结构化世界转移和层对齐交互，将世界预测与连续动作生成放进同一个基础模型。",
     realtimeBody: "把标准 Flow 的 10 步采样压缩到非均匀两步，并以系统级评测连接模型速度与真实双臂执行。",
     brainBody: "让上层 VLM 找目标、分割模型生成三色视觉协议、VLA 执行动作，把语义指令转化为可见引导。",
+    eapnBody: "对齐真实执行位移，将跨块噪声轨迹与动作历史传递到异步重规划中，保持生成策略在连续控制中的行为一致性。",
+    ctpBody: "以单次前向同时预测多条动作轨迹及其概率，通过峰值专门化和跨块信念传递兼顾多模态、低时延与闭环一致性。",
     memoryBody: "以时序记忆追踪执行状态，以空间检索找回历史视觉证据，让 VLA 处理依赖历史的操作任务。",
     projectPage: "项目主页",
     chineseIntro: "中文介绍",
@@ -281,6 +283,8 @@ const translations = {
     magicW0Body: "A unified state–action interface, Structured World Transition, and layer-aligned interaction place world prediction and continuous action generation in one foundation model.",
     realtimeBody: "Compress standard ten-step Flow sampling into two non-uniform stages, then evaluate how model speed translates to real bimanual execution.",
     brainBody: "A high-level VLM finds targets, segmentation produces a three-color visual protocol, and the VLA acts—turning semantic instructions into visible guidance.",
+    eapnBody: "Aligns cross-chunk noise trajectories and action history with actual execution displacement, preserving behavioral consistency during asynchronous closed-loop replanning.",
+    ctpBody: "Predicts multiple action trajectories and their probability masses in one forward pass, combining multimodality, low latency, and closed-loop consistency through peak specialization and belief transport.",
     memoryBody: "Temporal memory tracks execution state while spatial retrieval recovers historical visual evidence for history-dependent VLA tasks.",
     projectPage: "Project page",
     chineseIntro: "Chinese article",
@@ -377,7 +381,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v17-access-invite";
+const analyticsConsentVersion = "v18-selected-inference-works";
 const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
 const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
