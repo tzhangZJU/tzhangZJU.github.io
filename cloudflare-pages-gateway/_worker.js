@@ -1,11 +1,18 @@
 const ALLOWED_ORIGINS = new Set(["https://tzhangzju.github.io"]);
 const RETENTION_WINDOW = "-2 years";
+const ACCESS_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+const ACCESS_RATE_WINDOW_MINUTES = 15;
+const ACCESS_RATE_MAX_FAILURES = 5;
 
 const ALLOWED_EVENTS = new Set([
+  "access_gate_cached_grant", "access_gate_check", "access_gate_granted",
+  "access_gate_ip_allowlist", "access_gate_local_bypass", "access_gate_rejected",
+  "access_gate_service_error", "access_gate_submit", "access_gate_view",
   "analytics_consent_accept", "back_to_top_click", "contact_embodied_model_click",
   "contact_github_click", "contact_zhihu_click", "content_copy", "context_menu_open",
-  "demo_fold_box_video_click",
+  "demo_fold_box_video_click", "demo_fold_cloth_lab_video_click",
   "demo_fold_cloth_video_click", "demo_ink_rubbing_video_click",
+  "demo_suitcase_packing_video_click",
   "dual_stream_memory_project_click", "email_contact_click", "github_magic_w0_click",
   "github_realtime_vla_click", "hero_view_work_click", "language_toggle_click",
   "location_permission_later_click", "location_permission_retry_click",
@@ -48,7 +55,7 @@ function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://tzhangzju.github.io",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
     "Cache-Control": "no-store",
     "Vary": "Origin"
@@ -60,6 +67,287 @@ function json(body, status = 200, headers = {}) {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8", ...headers }
   });
+}
+
+function getClientIp(request) {
+  return request.headers.get("CF-Connecting-IP")
+    || request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim()
+    || "unknown";
+}
+
+function parseIpv4(address) {
+  const parts = address.split(".");
+  if (parts.length !== 4) return null;
+  let value = 0n;
+  for (const part of parts) {
+    if (!/^\d{1,3}$/.test(part)) return null;
+    const octet = Number(part);
+    if (octet > 255) return null;
+    value = (value << 8n) | BigInt(octet);
+  }
+  return value;
+}
+
+function parseIpv6(address) {
+  const normalized = address.toLowerCase().split("%")[0];
+  if (!normalized.includes(":")) return null;
+  const split = normalized.split("::");
+  if (split.length > 2) return null;
+  const left = split[0] ? split[0].split(":") : [];
+  const right = split[1] ? split[1].split(":") : [];
+  const missing = 8 - left.length - right.length;
+  if ((split.length === 2 && missing < 1) || (split.length === 1 && missing !== 0)) return null;
+  const parts = [...left, ...Array(Math.max(0, missing)).fill("0"), ...right];
+  if (parts.length !== 8 || parts.some((part) => !/^[0-9a-f]{1,4}$/.test(part))) return null;
+  return parts.reduce((value, part) => (value << 16n) | BigInt(`0x${part}`), 0n);
+}
+
+function ipMatchesRule(ipAddress, rawRule) {
+  const rule = rawRule.trim();
+  if (!rule) return false;
+  const [network, prefixText] = rule.split("/");
+  if (!prefixText) return ipAddress.toLowerCase() === network.toLowerCase();
+  const isIpv6 = network.includes(":");
+  if (isIpv6 !== ipAddress.includes(":")) return false;
+  const bits = isIpv6 ? 128 : 32;
+  const prefix = Number(prefixText);
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > bits) return false;
+  const ipValue = isIpv6 ? parseIpv6(ipAddress) : parseIpv4(ipAddress);
+  const networkValue = isIpv6 ? parseIpv6(network) : parseIpv4(network);
+  if (ipValue === null || networkValue === null) return false;
+  if (prefix === 0) return true;
+  const shift = BigInt(bits - prefix);
+  return (ipValue >> shift) === (networkValue >> shift);
+}
+
+function isIpAllowlisted(request, env) {
+  const ipAddress = getClientIp(request);
+  const configured = typeof env.ACCESS_IP_ALLOWLIST === "string"
+    ? env.ACCESS_IP_ALLOWLIST.split(",")
+    : [];
+  return configured.some((rule) => ipMatchesRule(ipAddress, rule));
+}
+
+function bytesToBase64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+
+function base64UrlToBytes(value) {
+  try {
+    const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+  } catch {
+    return null;
+  }
+}
+
+function constantTimeEqual(left, right) {
+  if (!(left instanceof Uint8Array) || !(right instanceof Uint8Array) || left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ right[index];
+  return difference === 0;
+}
+
+async function sha256Hex(value) {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)));
+  return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function signAccessValue(value, secret, algorithm = "SHA-256") {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: algorithm },
+    false,
+    ["sign"]
+  );
+  return new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value)));
+}
+
+function decodeBase32(value) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const normalized = String(value || "").toUpperCase().replace(/[^A-Z2-7]/g, "");
+  if (!normalized) return null;
+  let bits = "";
+  for (const character of normalized) {
+    const index = alphabet.indexOf(character);
+    if (index < 0) return null;
+    bits += index.toString(2).padStart(5, "0");
+  }
+  const bytes = [];
+  for (let index = 0; index + 8 <= bits.length; index += 8) {
+    bytes.push(Number.parseInt(bits.slice(index, index + 8), 2));
+  }
+  return new Uint8Array(bytes);
+}
+
+async function generateTotp(secret, timestampMs) {
+  const secretBytes = decodeBase32(secret);
+  if (!secretBytes) return null;
+  let counter = BigInt(Math.floor(timestampMs / 30000));
+  const counterBytes = new Uint8Array(8);
+  for (let index = 7; index >= 0; index -= 1) {
+    counterBytes[index] = Number(counter & 0xffn);
+    counter >>= 8n;
+  }
+  const key = await crypto.subtle.importKey(
+    "raw",
+    secretBytes,
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"]
+  );
+  const digest = new Uint8Array(await crypto.subtle.sign("HMAC", key, counterBytes));
+  const offset = digest.at(-1) & 0x0f;
+  const binary = ((digest[offset] & 0x7f) << 24)
+    | (digest[offset + 1] << 16)
+    | (digest[offset + 2] << 8)
+    | digest[offset + 3];
+  return String(binary % 1000000).padStart(6, "0");
+}
+
+async function verifyTotp(code, secret) {
+  if (!/^\d{6}$/.test(code) || !secret) return false;
+  const now = Date.now();
+  for (const offset of [-30000, 0, 30000]) {
+    const expected = await generateTotp(secret, now + offset);
+    if (expected && constantTimeEqual(new TextEncoder().encode(code), new TextEncoder().encode(expected))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function createAccessToken(request, env) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    v: 1,
+    iat: now,
+    exp: now + ACCESS_TOKEN_TTL_SECONDS,
+    ua: (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24)
+  };
+  const encodedPayload = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const signature = await signAccessValue(encodedPayload, env.ACCESS_TOKEN_SECRET);
+  return {
+    token: `${encodedPayload}.${bytesToBase64Url(signature)}`,
+    expiresAt: new Date(payload.exp * 1000).toISOString()
+  };
+}
+
+async function verifyAccessToken(request, env) {
+  if (!env.ACCESS_TOKEN_SECRET) return false;
+  const authorization = request.headers.get("Authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+  const [encodedPayload, encodedSignature, ...rest] = token.split(".");
+  if (!encodedPayload || !encodedSignature || rest.length) return false;
+  const suppliedSignature = base64UrlToBytes(encodedSignature);
+  if (!suppliedSignature) return false;
+  const expectedSignature = await signAccessValue(encodedPayload, env.ACCESS_TOKEN_SECRET);
+  if (!constantTimeEqual(suppliedSignature, expectedSignature)) return false;
+  const payloadBytes = base64UrlToBytes(encodedPayload);
+  if (!payloadBytes) return false;
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(payloadBytes));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.v !== 1 || !Number.isFinite(payload.exp) || payload.exp <= now) return false;
+    const userAgentHash = (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24);
+    return payload.ua === userAgentHash;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureAccessAttemptTable(env) {
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS access_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      attempted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      ip_hash TEXT NOT NULL,
+      succeeded INTEGER NOT NULL DEFAULT 0
+    )
+  `).run();
+  await env.DB.prepare(`
+    CREATE INDEX IF NOT EXISTS idx_access_attempts_ip_time
+    ON access_attempts (ip_hash, attempted_at)
+  `).run();
+}
+
+async function accessFailureCount(env, ipHash) {
+  await ensureAccessAttemptTable(env);
+  const result = await env.DB.prepare(`
+    SELECT COUNT(*) AS count FROM access_attempts
+    WHERE ip_hash = ? AND succeeded = 0
+      AND attempted_at >= datetime('now', ?)
+  `).bind(ipHash, `-${ACCESS_RATE_WINDOW_MINUTES} minutes`).first();
+  return Number(result?.count || 0);
+}
+
+async function recordAccessAttempt(env, ipHash, succeeded) {
+  await ensureAccessAttemptTable(env);
+  await env.DB.prepare(`
+    INSERT INTO access_attempts (ip_hash, succeeded) VALUES (?, ?)
+  `).bind(ipHash, succeeded ? 1 : 0).run();
+  if (succeeded) {
+    await env.DB.prepare(`DELETE FROM access_attempts WHERE ip_hash = ? AND succeeded = 0`)
+      .bind(ipHash).run();
+  }
+  await env.DB.prepare(`DELETE FROM access_attempts WHERE attempted_at < datetime('now', '-2 days')`).run();
+}
+
+async function handleAccessStatus(request, env, headers) {
+  if (isIpAllowlisted(request, env)) {
+    return json({ ok: true, allowed: true, method: "ip_allowlist" }, 200, headers);
+  }
+  if (await verifyAccessToken(request, env)) {
+    return json({ ok: true, allowed: true, method: "access_token" }, 200, headers);
+  }
+  return json({ ok: true, allowed: false }, 401, headers);
+}
+
+async function handleAccessVerification(request, env, headers) {
+  if (isIpAllowlisted(request, env)) {
+    return json({ ok: true, allowed: true, method: "ip_allowlist" }, 200, headers);
+  }
+  if (!env.ACCESS_TOTP_SECRET || !env.ACCESS_TOKEN_SECRET) {
+    return json({ ok: false, allowed: false, error_message: "访问验证服务尚未完成配置。" }, 503, headers);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, allowed: false, error_message: "请输入有效的验证码。" }, 400, headers);
+  }
+
+  const clientIp = getClientIp(request);
+  const ipHash = await sha256Hex(`${clientIp}:${env.ACCESS_TOKEN_SECRET}`);
+  const failures = await accessFailureCount(env, ipHash);
+  if (failures >= ACCESS_RATE_MAX_FAILURES) {
+    return json({
+      ok: false,
+      allowed: false,
+      error_message: `尝试次数过多，请 ${ACCESS_RATE_WINDOW_MINUTES} 分钟后重试。`
+    }, 429, { ...headers, "Retry-After": String(ACCESS_RATE_WINDOW_MINUTES * 60) });
+  }
+
+  const code = typeof body.code === "string" ? body.code.replace(/\D/g, "").slice(0, 6) : "";
+  const valid = await verifyTotp(code, env.ACCESS_TOTP_SECRET);
+  await recordAccessAttempt(env, ipHash, valid);
+  if (!valid) {
+    return json({ ok: false, allowed: false, error_message: "验证码错误或已过期，请重新输入。" }, 401, headers);
+  }
+
+  const grant = await createAccessToken(request, env);
+  return json({
+    ok: true,
+    allowed: true,
+    method: "totp",
+    token: grant.token,
+    expires_at: grant.expiresAt
+  }, 200, headers);
 }
 
 function shouldPromptForLocation(cf) {
@@ -262,7 +550,25 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v15-location-policy" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v16-access-gate" }, 200, headers);
+    }
+
+    if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
+      return new Response(null, { status: 204, headers });
+    }
+
+    if (request.method === "GET" && url.pathname === "/access/status") {
+      if (!ALLOWED_ORIGINS.has(origin)) {
+        return json({ ok: false, error: "origin_not_allowed" }, 403, headers);
+      }
+      return handleAccessStatus(request, env, headers);
+    }
+
+    if (request.method === "POST" && url.pathname === "/access/verify") {
+      if (!ALLOWED_ORIGINS.has(origin)) {
+        return json({ ok: false, error: "origin_not_allowed" }, 403, headers);
+      }
+      return handleAccessVerification(request, env, headers);
     }
 
     if (request.method === "GET" && url.pathname === "/location-policy") {
@@ -374,7 +680,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v15-location-policy",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v16-access-gate",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),

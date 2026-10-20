@@ -522,6 +522,28 @@ footer a:hover, footer a:focus-visible { border-color: var(--accent); color: var
 .footer-actions button { padding: 0 0 .15rem; border: 0; border-bottom: 1px solid var(--line-strong); background: transparent; color: var(--muted-strong); font: inherit; cursor: pointer; transition: border-color .2s ease, color .2s ease; }
 .footer-actions button:hover, .footer-actions button:focus-visible { border-color: var(--accent); color: var(--ink); }
 
+.access-pending { overflow: hidden; }
+html.access-pending body { min-height: 100vh; background: #eef4f4; }
+html.access-pending body > :not(.access-gate) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.access-gate[hidden] { display: none !important; }
+.access-gate { position: fixed; z-index: 2000; inset: 0; display: grid; place-items: center; padding: 1.25rem; overflow: auto; background: radial-gradient(circle at 50% 0%, rgba(34, 151, 139, .12), transparent 38%), #eef4f4; color: #10222a; }
+.access-gate__panel { width: min(100%, 440px); padding: clamp(1.6rem, 5vw, 2.4rem); border: 1px solid #bfd2d3; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(22, 55, 61, .14); }
+.access-gate__kicker { margin: 0 0 .7rem; color: #167f79; font-size: .7rem; font-weight: 800; letter-spacing: .14em; }
+.access-gate h1 { margin: 0 0 .8rem; font-size: clamp(1.55rem, 6vw, 2rem); line-height: 1.25; }
+.access-gate p { margin: 0; color: #52666e; font-size: .88rem; line-height: 1.7; }
+.access-gate a { color: #126e69; text-decoration: underline; text-underline-offset: 3px; }
+.access-gate__form { display: grid; gap: .65rem; margin-top: 1.5rem; }
+.access-gate__form label { color: #24383f; font-size: .76rem; font-weight: 780; }
+.access-gate__form input { width: 100%; min-height: 52px; padding: .75rem .9rem; border: 1px solid #aabfc1; border-radius: 8px; background: #fbfdfd; color: #10222a; font: inherit; font-size: 1.15rem; letter-spacing: .18em; }
+.access-gate__form input:focus { border-color: #167f79; outline: 3px solid rgba(22, 127, 121, .14); }
+.access-gate__form button { min-height: 48px; border: 1px solid #167f79; border-radius: 8px; background: #167f79; color: #fff; font: inherit; font-size: .86rem; font-weight: 800; cursor: pointer; transition: background-color .2s ease, transform .2s ease; }
+.access-gate__form button:hover, .access-gate__form button:focus-visible { background: #0f6d68; transform: translateY(-1px); }
+.access-gate__form button:disabled { cursor: wait; opacity: .7; transform: none; }
+.access-gate__error { margin-top: .9rem !important; padding: .65rem .75rem; border-radius: 7px; background: #fff0ef; color: #a43a32 !important; font-size: .78rem !important; }
+
 .privacy-dialog-open { overflow: hidden; }
 html.privacy-pending body > header,
 html.privacy-pending body > main,

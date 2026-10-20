@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light" class="privacy-pending">
+<html lang="zh-CN" data-theme="light" class="privacy-pending access-pending">
   <head>
     <meta charset="utf-8" />
     <meta name="referrer" content="no-referrer" />
@@ -21,10 +21,24 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307111f'/%3E%3Cpath d='M15 18h34v8H36v24h-8V26H15z' fill='%235de1c2'/%3E%3C/svg%3E"
     />
     <script src="theme-init.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261017e" />
-    <script src="script.js?v=20261017u" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261020a" />
+    <script src="script.js?v=20261020a" defer></script>
   </head>
   <body>
+    <aside id="access-gate" class="access-gate" role="dialog" aria-modal="true" aria-labelledby="access-gate-title" aria-describedby="access-gate-description">
+      <div class="access-gate__panel">
+        <p class="access-gate__kicker">ACCESS · 访问验证</p>
+        <h1 id="access-gate-title">请输入访问验证码</h1>
+        <p id="access-gate-description">如您尚未获得验证码，请联系 <a href="mailto:zhangt91@126.com">zhangt91@126.com</a> 获取。</p>
+        <form id="access-gate-form" class="access-gate__form" novalidate>
+          <label for="access-gate-code">访问验证码</label>
+          <input id="access-gate-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 位数字" required />
+          <button id="access-gate-submit" type="submit">验证并访问</button>
+        </form>
+        <p id="access-gate-error" class="access-gate__error" role="alert" hidden></p>
+      </div>
+    </aside>
+
     <a class="skip-link" href="#main" data-i18n="skip">跳转到正文</a>
 
     <header class="site-header">

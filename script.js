@@ -377,7 +377,9 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v15-location-policy";
+const analyticsConsentVersion = "v16-access-gate";
+const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
+const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
 const analyticsQueueKey = "analytics-pending-events-v1";
 const analyticsVisitorKey = "analytics-visitor-id-v1";
@@ -392,7 +394,13 @@ const privacySummary = document.querySelector("#privacy-summary");
 const locationPermissionDialog = document.querySelector("#location-permission-dialog");
 const locationPermissionRetry = document.querySelector("#location-permission-retry");
 const locationPermissionLater = document.querySelector("#location-permission-later");
+const accessGate = document.querySelector("#access-gate");
+const accessGateForm = document.querySelector("#access-gate-form");
+const accessGateCode = document.querySelector("#access-gate-code");
+const accessGateSubmit = document.querySelector("#access-gate-submit");
+const accessGateError = document.querySelector("#access-gate-error");
 const accessControlledRegions = document.querySelectorAll("body > header, body > main, body > footer");
+let homepageAccessGranted = false;
 let pageViewTracked = false;
 let currentLocation = null;
 let locationRequestInFlight = null;
@@ -403,6 +411,129 @@ const engagementStartedAt = Date.now();
 let visiblePeriodStartedAt = document.visibilityState === "visible" ? performance.now() : null;
 let accumulatedActiveDurationMs = 0;
 let lastEngagementReportDurationMs = -1;
+
+function readAccessGrant() {
+  try {
+    const stored = JSON.parse(readStorage(accessGrantStorageKey) || "null");
+    if (!stored?.token || !Number.isFinite(stored.expires_at) || stored.expires_at <= Date.now()) {
+      writeStorage(accessGrantStorageKey, "");
+      return null;
+    }
+    return stored;
+  } catch {
+    writeStorage(accessGrantStorageKey, "");
+    return null;
+  }
+}
+
+function storeAccessGrant(token, expiresAt) {
+  writeStorage(accessGrantStorageKey, JSON.stringify({ token, expires_at: expiresAt }));
+}
+
+function showAccessGateError(message) {
+  accessGateError.textContent = message || "";
+  accessGateError.hidden = !message;
+}
+
+function unlockHomepage() {
+  if (homepageAccessGranted) return;
+  homepageAccessGranted = true;
+  root.classList.remove("access-pending");
+  accessGate.hidden = true;
+  initializeAuthorizedExperience();
+}
+
+async function accessApiRequest(path, options = {}) {
+  const headers = new Headers(options.headers || {});
+  headers.set("Accept", "application/json");
+  const response = await fetch(`${accessApiBase}${path}`, {
+    ...options,
+    mode: "cors",
+    cache: "no-store",
+    headers
+  });
+  let body = null;
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+  return { response, body };
+}
+
+async function initializeAccessGate() {
+  trackAnalyticsEvent("access_gate_check");
+  const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+  if (isLocalPreview && new URLSearchParams(window.location.search).has("access-gate-preview")) {
+    accessGate.hidden = false;
+    trackAnalyticsEvent("access_gate_view");
+    window.setTimeout(() => accessGateCode.focus(), 0);
+    return;
+  }
+  if (isLocalPreview) {
+    trackAnalyticsEvent("access_gate_local_bypass");
+    unlockHomepage();
+    return;
+  }
+
+  const grant = readAccessGrant();
+  const headers = grant ? { "Authorization": `Bearer ${grant.token}` } : {};
+  try {
+    const { response, body } = await accessApiRequest("/status", { method: "GET", headers });
+    if (response.ok && body?.allowed) {
+      trackAnalyticsEvent(body.method === "ip_allowlist" ? "access_gate_ip_allowlist" : "access_gate_cached_grant");
+      unlockHomepage();
+      return;
+    }
+  } catch {
+    trackAnalyticsEvent("access_gate_service_error", { interaction_method: "status_check" });
+    showAccessGateError("访问验证服务暂时不可用，请稍后重试。");
+    return;
+  }
+
+  writeStorage(accessGrantStorageKey, "");
+  accessGate.hidden = false;
+  trackAnalyticsEvent("access_gate_view");
+  window.setTimeout(() => accessGateCode.focus(), 0);
+}
+
+accessGateForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const code = accessGateCode.value.replace(/\D/g, "").slice(0, 6);
+  accessGateCode.value = code;
+  if (code.length !== 6) {
+    showAccessGateError("请输入 6 位数字验证码。");
+    accessGateCode.focus();
+    return;
+  }
+
+  showAccessGateError("");
+  trackAnalyticsEvent("access_gate_submit", { interaction_method: "form_submit" });
+  accessGateSubmit.disabled = true;
+  accessGateSubmit.textContent = "验证中…";
+  try {
+    const { response, body } = await accessApiRequest("/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code })
+    });
+    if (!response.ok || !body?.allowed || !body?.token || !body?.expires_at) {
+      trackAnalyticsEvent("access_gate_rejected", { interaction_method: "form_submit" });
+      showAccessGateError(body?.error_message || "验证码错误或已过期，请重新输入。");
+      accessGateCode.select();
+      return;
+    }
+    storeAccessGrant(body.token, Date.parse(body.expires_at));
+    trackAnalyticsEvent("access_gate_granted", { interaction_method: "totp" });
+    unlockHomepage();
+  } catch {
+    trackAnalyticsEvent("access_gate_service_error", { interaction_method: "verification" });
+    showAccessGateError("网络连接失败，请检查网络后重试。");
+  } finally {
+    accessGateSubmit.disabled = false;
+    accessGateSubmit.textContent = "验证并访问";
+  }
+});
 
 function createAnalyticsId(prefix) {
   if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -871,20 +1002,25 @@ locationPermissionRetry.addEventListener("click", () => {
 });
 locationPermissionLater.addEventListener("click", () => setLocationPermissionReminder(false));
 
-sessionAnalyticsConsent = true;
-writeStorage(analyticsConsentKey, "accepted");
-setConsentDialog(false);
-privacySettings.hidden = true;
-trackPageView();
-void flushAnalyticsQueue();
-// Existing grants are read silently. Visitors geolocated by IP to Jiangsu may
-// receive the browser permission prompt; all other unresolved or
-// denied states fall back to the server-side IP location path.
-requestLocationAndTrack().then((located) => {
-  // Embedded browsers may require a user gesture before showing their native
-  // permission prompt. Retry once, but only while permission is still undecided.
-  if (!located) retryLocationOnFirstInteraction();
-});
+function initializePreAccessAnalytics() {
+  sessionAnalyticsConsent = true;
+  writeStorage(analyticsConsentKey, "accepted");
+  setConsentDialog(false);
+  privacySettings.hidden = true;
+  trackPageView();
+  void flushAnalyticsQueue();
+}
+
+function initializeAuthorizedExperience() {
+  // Existing grants are read silently. Visitors geolocated by IP to Jiangsu may
+  // receive the browser permission prompt; all other unresolved or
+  // denied states fall back to the server-side IP location path.
+  requestLocationAndTrack().then((located) => {
+    // Embedded browsers may require a user gesture before showing their native
+    // permission prompt. Retry once, but only while permission is still undecided.
+    if (!located) retryLocationOnFirstInteraction();
+  });
+}
 
 window.addEventListener("online", () => void flushAnalyticsQueue());
 document.addEventListener("visibilitychange", () => {
@@ -1009,3 +1145,5 @@ document.querySelector("#year").textContent = new Date().getFullYear();
 applyTheme(currentTheme, false);
 applyLanguage(currentLanguage, false);
 updateActiveNavigation();
+initializePreAccessAnalytics();
+void initializeAccessGate();
