@@ -466,7 +466,14 @@ h1 {
 .demo-grid { width: min(100%, 960px); display: grid; grid-template-columns: 1fr; gap: clamp(3.5rem, 6vw, 5.5rem); margin: 0 auto; }
 .demos-section .section-heading-row p { max-width: none; font-size: clamp(.72rem, 1.15vw, 1rem); overflow-wrap: anywhere; white-space: normal; }
 .demo-card { position: relative; padding: 1rem 1rem 1.25rem; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-raised); box-shadow: var(--shadow-soft); transition: border-color .2s ease, transform .2s ease; }
+.demo-media-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
+.demo-media-link { display: block; min-width: 0; border-radius: 9px; }
+.demo-media-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.demo-media-grid .demo-media { margin-bottom: 0; }
 .demo-media { position: relative; margin-bottom: 1.25rem; overflow: hidden; border-radius: 9px; background: #07111f; }
+.demo-media--sequence { aspect-ratio: 16 / 9; isolation: isolate; }
+.demo-media__sequence { position: absolute; z-index: 1; inset: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; background: #07111f; }
+.demo-media__sequence img { width: 100%; height: 100%; object-fit: cover; filter: none; transform: none; }
 .demo-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(4, 11, 20, .24)); pointer-events: none; transition: background-color .25s ease; }
 .demo-card img { width: 100%; height: auto; object-fit: contain; display: block; filter: saturate(.86); transition: filter .25s ease, transform .35s ease; }
 .demo-play { position: absolute; z-index: 2; top: 50%; left: 50%; display: inline-flex; min-height: 3.5rem; align-items: center; gap: .7rem; padding: .7rem 1rem .7rem .72rem; border: 1px solid rgba(255,255,255,.72); border-radius: 999px; background: var(--play-bg); color: #fff; box-shadow: 0 12px 32px rgba(0,0,0,.24); font-size: .78rem; font-weight: 780; letter-spacing: .06em; transform: translate(-50%, -50%); transition: background-color .2s ease, border-color .2s ease, transform .2s ease; }
@@ -474,9 +481,12 @@ h1 {
 .demo-source-note { position: absolute; z-index: 2; right: .75rem; bottom: .75rem; padding: .42rem .58rem; border: 1px solid rgba(255,255,255,.45); border-radius: 4px; background: rgba(4, 11, 20, .7); color: #fff; font-size: .66rem; font-weight: 680; letter-spacing: .04em; backdrop-filter: blur(7px); }
 .demo-card:hover, .demo-card:focus-visible { border-color: var(--accent); transform: translateY(-2px); }
 .demo-card:hover img, .demo-card:focus-visible img { filter: saturate(1.08); transform: scale(1.012); }
+.demo-card:hover .demo-media__sequence img, .demo-card:focus-visible .demo-media__sequence img { filter: saturate(1.05); transform: none; }
 .demo-card:hover .demo-media::after, .demo-card:focus-visible .demo-media::after { background-color: rgba(4, 11, 20, .1); }
 .demo-card:hover .demo-play, .demo-card:focus-visible .demo-play { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); transform: translate(-50%, -50%) scale(1.04); }
 .demo-card:hover .demo-play-icon, .demo-card:focus-visible .demo-play-icon { background: var(--accent-ink); color: var(--accent); }
+.demo-media-link:focus-visible .demo-play { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); transform: translate(-50%, -50%) scale(1.04); }
+.demo-media-link:focus-visible .demo-play-icon { background: var(--accent-ink); color: var(--accent); }
 .demo-card h3 { margin: .35rem 0 0; font-size: clamp(1.6rem, 2.4vw, 2.15rem); }
 .demo-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-top: 1.15rem; }
 .demo-fact { min-width: 0; margin: 0; padding: .9rem 1rem; border: 1px solid var(--line); border-top: 3px solid var(--accent); background: var(--panel-glass); }
@@ -643,6 +653,7 @@ html.privacy-pending body > footer,
   .paper-item > a { grid-column: auto; }
   .paper-item { padding: 1.5rem .25rem; }
   .demo-card { padding: .55rem .55rem 1rem; border-radius: 11px; }
+  .demo-media-grid { grid-template-columns: 1fr; gap: .55rem; }
   .demo-media { border-radius: 7px; }
   .demo-play { min-height: 3rem; gap: .5rem; padding: .55rem .8rem .55rem .58rem; font-size: .7rem; }
   .demo-play-icon { width: 1.8rem; height: 1.8rem; font-size: .7rem; }

@@ -541,11 +541,22 @@
           <p data-i18n="demosNote">代表性真机演示与 WAIC、WRC、IFA 等展演。</p>
         </div>
         <div class="demo-grid">
-          <a class="demo-card reveal" href="assets/demos/fold-cloth-exhibition.mp4" target="_blank" rel="noopener noreferrer" data-analytics-event="demo_fold_cloth_video_click">
-            <div class="demo-media">
-              <img src="assets/demos/fold-cloth-poster.png" alt="展会现场机器人折叠衣物" loading="lazy" />
-              <span class="demo-play"><span class="demo-play-icon" aria-hidden="true">▶</span><span data-i18n="playVideo">播放视频</span></span>
-              <span class="demo-source-note" data-i18n="demoSourceNote">现场视频，原倍速</span>
+          <article class="demo-card reveal">
+            <div class="demo-media-grid">
+              <a class="demo-media-link" href="assets/demos/fold-cloth-exhibition.mp4" target="_blank" rel="noopener noreferrer" aria-label="播放衣服折叠展会视频" data-i18n-aria="foldClothVideoExhibition" data-analytics-event="demo_fold_cloth_video_click">
+                <div class="demo-media">
+                  <img src="assets/demos/fold-cloth-poster.png" alt="展会现场机器人折叠衣物" loading="lazy" />
+                  <span class="demo-play"><span class="demo-play-icon" aria-hidden="true">▶</span><span data-i18n="playVideo">播放视频</span></span>
+                  <span class="demo-source-note" data-i18n="demoSourceNote">现场视频，原倍速</span>
+                </div>
+              </a>
+              <a class="demo-media-link" href="assets/demos/fold-cloth-lab.mp4" target="_blank" rel="noopener noreferrer" aria-label="播放衣服折叠实验室视频" data-i18n-aria="foldClothVideoLab" data-analytics-event="demo_fold_cloth_lab_video_click">
+                <div class="demo-media">
+                  <img src="assets/demos/fold-cloth-lab-poster.png" alt="实验室双臂机器人折叠红色衣物" loading="lazy" />
+                  <span class="demo-play"><span class="demo-play-icon" aria-hidden="true">▶</span><span data-i18n="playVideo">播放视频</span></span>
+                  <span class="demo-source-note" data-i18n="demoSourceNote">现场视频，原倍速</span>
+                </div>
+              </a>
             </div>
             <span>01 · REAL ROBOT</span>
             <h3 data-i18n="foldCloth">衣服折叠</h3>
@@ -554,7 +565,7 @@
               <p class="demo-fact"><strong data-i18n="demoCapabilityLabel">任务能力</strong><span data-i18n-html="foldClothCapability">完成衣物折叠，可响应执行中干扰；在上交会、WAIC、WRC 以 Zero-Shot 方式部署展示，相关公众号视频获 <b>2k+ 点赞</b>。</span></p>
               <p class="demo-fact"><strong data-i18n="demoDeploymentLabel">落地关注</strong><span data-i18n="foldClothDeployment">柔性操作、干扰后的恢复，以及连续处理所需的人工支持。</span></p>
             </div>
-          </a>
+          </article>
           <a class="demo-card reveal" href="assets/demos/fold-box-waic.mp4" target="_blank" rel="noopener noreferrer" data-analytics-event="demo_fold_box_video_click">
             <div class="demo-media">
               <img src="assets/demos/fold-box-poster.png" alt="展会现场机器人进行纸箱封包" loading="lazy" />
@@ -581,6 +592,24 @@
               <p class="demo-fact"><strong data-i18n="demoResultLabel">测试结果</strong><span data-i18n-html="inkRubbingResult">基于自采数据训练，成功率 <b>96.3%</b>，平均执行时长 <b>40 秒</b>。</span></p>
               <p class="demo-fact"><strong data-i18n="demoCapabilityLabel">任务能力</strong><span data-i18n="inkRubbingCapability">完成蘸墨、刷墨至拓印，适应初始位置变化与光线干扰；于 WRC、外滩大会现场展示。</span></p>
               <p class="demo-fact"><strong data-i18n="demoDeploymentLabel">落地关注</strong><span data-i18n="inkRubbingDeployment">拓印质量一致性、工具状态变化，以及多轮连续作业稳定性。</span></p>
+            </div>
+          </a>
+          <a class="demo-card reveal" href="assets/demos/suitcase-packing-waic.mp4" target="_blank" rel="noopener noreferrer" data-analytics-event="demo_suitcase_packing_video_click">
+            <div class="demo-media demo-media--sequence" role="img" aria-label="WAIC 现场人形机器人使用灵巧手完成行李箱收纳的连续操作">
+              <span class="demo-media__sequence" aria-hidden="true">
+                <img src="assets/demos/suitcase-packing-waic-step-1.png" alt="" loading="lazy" />
+                <img src="assets/demos/suitcase-packing-waic-poster.png" alt="" loading="lazy" />
+                <img src="assets/demos/suitcase-packing-waic-step-3.png" alt="" loading="lazy" />
+              </span>
+              <span class="demo-play"><span class="demo-play-icon" aria-hidden="true">▶</span><span data-i18n="playVideo">播放视频</span></span>
+              <span class="demo-source-note" data-i18n="demoSourceNote">现场视频，原倍速</span>
+            </div>
+            <span>04 · REAL ROBOT</span>
+            <h3 data-i18n="suitcasePacking">行李箱收纳</h3>
+            <div class="demo-facts">
+              <p class="demo-fact"><strong data-i18n="demoResultLabel">测试结果</strong><span data-i18n-html="suitcasePackingResult">基于自采数据训练，成功率 <b>97%+</b>，并在 WAIC 展会现场完成真机展示。</span></p>
+              <p class="demo-fact"><strong data-i18n="demoCapabilityLabel">任务能力</strong><span data-i18n="suitcasePackingCapability">基于人形机器人与灵巧手，完成物品抓取、搬运与放入行李箱等连续操作。</span></p>
+              <p class="demo-fact"><strong data-i18n="demoDeploymentLabel">落地关注</strong><span data-i18n="suitcasePackingDeployment">灵巧手抓取稳定性、物品差异适应，以及展会现场长时间运行可靠性。</span></p>
             </div>
           </a>
         </div>
