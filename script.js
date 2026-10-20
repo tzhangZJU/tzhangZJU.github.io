@@ -381,7 +381,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v22-obfuscated-access-contact";
+const analyticsConsentVersion = "v23-wechat-contact-preview";
 const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
 const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
@@ -403,6 +403,10 @@ const accessGateForm = document.querySelector("#access-gate-form");
 const accessGateCode = document.querySelector("#access-gate-code");
 const accessGateSubmit = document.querySelector("#access-gate-submit");
 const accessGateError = document.querySelector("#access-gate-error");
+const accessGatePanel = document.querySelector(".access-gate__panel");
+const accessContactTrigger = document.querySelector("#access-contact-trigger");
+const wechatContactDialog = document.querySelector("#wechat-contact-dialog");
+const wechatContactCloseButtons = document.querySelectorAll("[data-wechat-contact-close]");
 const accessControlledRegions = document.querySelectorAll("body > header, body > main, body > footer");
 let homepageAccessGranted = false;
 let pageViewTracked = false;
@@ -444,6 +448,27 @@ function showAccessGateError(message) {
   accessGateError.textContent = message || "";
   accessGateError.hidden = !message;
 }
+
+function setWechatContactDialog(open) {
+  wechatContactDialog.hidden = !open;
+  accessGatePanel.toggleAttribute("inert", open);
+  accessGatePanel.setAttribute("aria-hidden", String(open));
+  if (open) {
+    trackAnalyticsEvent("access_contact_wechat_qr_open");
+    window.setTimeout(() => wechatContactDialog.querySelector(".wechat-contact-dialog__close").focus(), 0);
+  } else {
+    accessContactTrigger.focus();
+  }
+}
+
+accessContactTrigger.addEventListener("click", () => setWechatContactDialog(true));
+wechatContactCloseButtons.forEach((button) => button.addEventListener("click", () => setWechatContactDialog(false)));
+wechatContactDialog.addEventListener("click", (event) => {
+  if (event.target === wechatContactDialog) setWechatContactDialog(false);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !wechatContactDialog.hidden) setWechatContactDialog(false);
+});
 
 function unlockHomepage() {
   if (homepageAccessGranted) return;

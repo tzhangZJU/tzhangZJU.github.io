@@ -21,21 +21,36 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307111f'/%3E%3Cpath d='M15 18h34v8H36v24h-8V26H15z' fill='%235de1c2'/%3E%3C/svg%3E"
     />
     <script src="theme-init.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261021a" />
-    <script src="script.js?v=20261021f" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261021b" />
+    <script src="script.js?v=20261021g" defer></script>
   </head>
   <body>
     <aside id="access-gate" class="access-gate" role="dialog" aria-modal="true" aria-labelledby="access-gate-title" aria-describedby="access-gate-description">
       <div class="access-gate__panel">
         <p class="access-gate__kicker">ACCESS · 访问验证</p>
         <h1 id="access-gate-title">请输入访问验证码</h1>
-        <p id="access-gate-description">如您尚未获得验证码，请联系 <a href="#contact" data-email-link>Tao Zhang</a> 获取。</p>
+        <p id="access-gate-description">如您尚未获得验证码，请联系 <button id="access-contact-trigger" class="access-contact-trigger" type="button">Tao Zhang</button> 获取。</p>
         <form id="access-gate-form" class="access-gate__form" novalidate>
           <label for="access-gate-code">访问验证码</label>
           <input id="access-gate-code" name="code" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" pattern="[A-Za-z0-9-]{6,19}" maxlength="19" placeholder="动态码或邀请码" required />
           <button id="access-gate-submit" type="submit">验证并访问</button>
         </form>
         <p id="access-gate-error" class="access-gate__error" role="alert" hidden></p>
+      </div>
+      <div id="wechat-contact-dialog" class="wechat-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="wechat-contact-title" aria-describedby="wechat-contact-summary" hidden>
+        <div class="wechat-contact-dialog__panel">
+          <button class="wechat-contact-dialog__close" type="button" data-wechat-contact-close aria-label="关闭微信二维码">×</button>
+          <p class="access-gate__kicker">CONTACT · 联系方式</p>
+          <h2 id="wechat-contact-title">微信联系 Tao Zhang</h2>
+          <div class="wechat-contact-dialog__qr">
+            <img src="assets/wechat-contact-qr.png" alt="Tao Zhang 微信二维码" />
+          </div>
+          <p id="wechat-contact-summary">使用微信扫描二维码，或通过邮件联系。</p>
+          <div class="wechat-contact-dialog__actions">
+            <a class="wechat-contact-dialog__email" href="#contact" data-email-link data-analytics-event="access_contact_email_click">邮件联系</a>
+            <button class="wechat-contact-dialog__dismiss" type="button" data-wechat-contact-close>关闭</button>
+          </div>
+        </div>
       </div>
     </aside>
 
