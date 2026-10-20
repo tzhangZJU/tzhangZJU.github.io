@@ -381,7 +381,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v19-selected-work-labels";
+const analyticsConsentVersion = "v20-access-contact";
 const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
 const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
