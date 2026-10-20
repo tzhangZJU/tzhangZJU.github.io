@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,12 +10,37 @@ const worker = await import(`data:text/javascript;base64,${Buffer.from(workerSou
 
 const totpSecret = "JBSWY3DPEHPK3PXP";
 const tokenSecret = "test-session-secret-with-sufficient-entropy";
+const inviteCode = "ABCD-EFGH-JKLM-NPQR";
+const inviteHash = createHash("sha256").update(inviteCode.replaceAll("-", "")).digest("hex");
+const unusedInviteHashes = new Set([inviteHash]);
+const accessGrantRecords = new Map();
+let lastAnalyticsBindings = null;
 const database = {
-  prepare() {
+  prepare(sql) {
+    let bindings = [];
     const statement = {
-      bind() { return statement; },
-      async first() { return { count: 0 }; },
-      async run() { return { success: true }; }
+      bind(...values) { bindings = values; return statement; },
+      async first() {
+        if (/UPDATE access_invites/i.test(sql)) {
+          const hash = bindings[2];
+          return unusedInviteHashes.delete(hash) ? { id: 42 } : null;
+        }
+        if (/SELECT access_method, invite_id, access_code\s+FROM access_grants/i.test(sql)) {
+          return accessGrantRecords.get(bindings[0]) || null;
+        }
+        return { count: 0 };
+      },
+      async run() {
+        if (/INSERT INTO access_grants/i.test(sql)) {
+          accessGrantRecords.set(bindings[0], {
+            access_method: bindings[1],
+            invite_id: bindings[2],
+            access_code: bindings[3]
+          });
+        }
+        if (/INSERT INTO analytics_events/i.test(sql)) lastAnalyticsBindings = bindings;
+        return { success: true, meta: { changes: 0 } };
+      }
     };
     return statement;
   }
@@ -65,10 +90,11 @@ const allowlisted = await worker.default.fetch(makeRequest("/access/status", {
 assert.equal(allowlisted.status, 200);
 assert.equal((await allowlisted.json()).method, "ip_allowlist");
 
+const totpCode = currentTotp(totpSecret);
 const verify = await worker.default.fetch(makeRequest("/access/verify", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ code: currentTotp(totpSecret) })
+  body: JSON.stringify({ code: totpCode })
 }), environment);
 assert.equal(verify.status, 200);
 const grant = await verify.json();
@@ -84,5 +110,65 @@ const authorized = await worker.default.fetch(makeRequest("/access/status", {
 }), environment);
 assert.equal(authorized.status, 200);
 assert.equal((await authorized.json()).method, "access_token");
+
+const linkedTotpAnalytics = await worker.default.fetch(makeRequest("/events", {
+  method: "POST",
+  headers: {
+    "Content-Type": "text/plain;charset=UTF-8",
+    "Authorization": `Bearer ${grant.token}`
+  },
+  body: JSON.stringify({
+    event: "page_view",
+    source_page: "https://tzhangzju.github.io/",
+    consent_version: "v17-access-invite"
+  })
+}), environment);
+assert.equal(linkedTotpAnalytics.status, 201);
+assert.deepEqual(lastAnalyticsBindings.slice(-4), [
+  grant.access_grant_id,
+  "totp",
+  null,
+  totpCode
+]);
+
+const inviteVerify = await worker.default.fetch(makeRequest("/access/verify", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "CF-Connecting-IP": "198.51.100.9" },
+  body: JSON.stringify({ code: inviteCode })
+}), environment);
+assert.equal(inviteVerify.status, 200);
+const inviteGrant = await inviteVerify.json();
+assert.equal(inviteGrant.allowed, true);
+assert.equal(inviteGrant.method, "invite_code");
+assert.equal(inviteGrant.invite_id, 42);
+assert.ok(inviteGrant.access_grant_id);
+
+const linkedAnalytics = await worker.default.fetch(makeRequest("/events", {
+  method: "POST",
+  headers: {
+    "Content-Type": "text/plain;charset=UTF-8",
+    "Authorization": `Bearer ${inviteGrant.token}`
+  },
+  body: JSON.stringify({
+    event: "page_view",
+    source_page: "https://tzhangzju.github.io/",
+    consent_version: "v17-access-invite"
+  })
+}), environment);
+assert.equal(linkedAnalytics.status, 201);
+assert.deepEqual(lastAnalyticsBindings.slice(-4), [
+  inviteGrant.access_grant_id,
+  "invite_code",
+  42,
+  inviteCode
+]);
+
+const inviteReuse = await worker.default.fetch(makeRequest("/access/verify", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "CF-Connecting-IP": "198.51.100.10" },
+  body: JSON.stringify({ code: inviteCode })
+}), environment);
+assert.equal(inviteReuse.status, 401);
+assert.equal((await inviteReuse.json()).allowed, false);
 
 console.log("Access gate tests passed.");

@@ -3,6 +3,7 @@ const RETENTION_WINDOW = "-2 years";
 const ACCESS_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
 const ACCESS_RATE_WINDOW_MINUTES = 15;
 const ACCESS_RATE_MAX_FAILURES = 5;
+const ACCESS_INVITE_LENGTH = 16;
 
 const ALLOWED_EVENTS = new Set([
   "access_gate_cached_grant", "access_gate_check", "access_gate_granted",
@@ -221,20 +222,87 @@ async function verifyTotp(code, secret) {
   return false;
 }
 
-async function createAccessToken(request, env) {
+function normalizeInviteCode(value) {
+  return String(value || "").toUpperCase().replace(/[^A-Z2-9]/g, "").slice(0, ACCESS_INVITE_LENGTH);
+}
+
+function formatInviteCode(value) {
+  const normalized = normalizeInviteCode(value);
+  return normalized.match(/.{1,4}/g)?.join("-") || normalized;
+}
+
+async function redeemInviteCode(request, env, rawCode, ipHash) {
+  const code = normalizeInviteCode(rawCode);
+  if (code.length !== ACCESS_INVITE_LENGTH) return false;
+  const codeHash = await sha256Hex(code);
+  const userAgentHash = (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24);
+  try {
+    const redeemed = await env.DB.prepare(`
+      UPDATE access_invites
+      SET used_at = CURRENT_TIMESTAMP, used_ip_hash = ?, used_user_agent_hash = ?
+      WHERE code_hash = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP
+      RETURNING id
+    `).bind(ipHash, userAgentHash, codeHash).first();
+    return Number.isInteger(Number(redeemed?.id))
+      ? { inviteId: Number(redeemed.id), accessCode: formatInviteCode(code) }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function recordAccessGrant(env, grant) {
+  await env.DB.prepare(`
+    INSERT INTO access_grants (
+      grant_id, access_method, invite_id, access_code, expires_at
+    ) VALUES (?, ?, ?, ?, ?)
+  `).bind(
+    grant.grantId,
+    grant.accessMethod,
+    grant.inviteId,
+    grant.accessCode,
+    grant.expiresAt.replace("T", " ").replace(/\.\d{3}Z$/, "")
+  ).run();
+  await env.DB.prepare(`
+    DELETE FROM access_grants WHERE created_at < datetime('now', '-2 years')
+  `).run();
+}
+
+async function lookupAccessGrant(env, grantId) {
+  if (!grantId) return null;
+  try {
+    return await env.DB.prepare(`
+      SELECT access_method, invite_id, access_code
+      FROM access_grants WHERE grant_id = ?
+    `).bind(grantId).first();
+  } catch {
+    return null;
+  }
+}
+
+async function createAccessToken(request, env, claims = {}) {
   const now = Math.floor(Date.now() / 1000);
   const payload = {
-    v: 1,
+    v: 2,
     iat: now,
     exp: now + ACCESS_TOKEN_TTL_SECONDS,
-    ua: (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24)
+    ua: (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24),
+    gid: claims.grantId || crypto.randomUUID(),
+    am: claims.accessMethod || "unknown",
+    iid: Number.isInteger(claims.inviteId) ? claims.inviteId : null
   };
   const encodedPayload = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
   const signature = await signAccessValue(encodedPayload, env.ACCESS_TOKEN_SECRET);
-  return {
+  const grant = {
     token: `${encodedPayload}.${bytesToBase64Url(signature)}`,
-    expiresAt: new Date(payload.exp * 1000).toISOString()
+    expiresAt: new Date(payload.exp * 1000).toISOString(),
+    grantId: payload.gid,
+    accessMethod: payload.am,
+    inviteId: payload.iid,
+    accessCode: claims.accessCode || null
   };
+  await recordAccessGrant(env, grant);
+  return grant;
 }
 
 async function verifyAccessToken(request, env) {
@@ -252,9 +320,10 @@ async function verifyAccessToken(request, env) {
   try {
     const payload = JSON.parse(new TextDecoder().decode(payloadBytes));
     const now = Math.floor(Date.now() / 1000);
-    if (payload.v !== 1 || !Number.isFinite(payload.exp) || payload.exp <= now) return false;
+    if (![1, 2].includes(payload.v) || !Number.isFinite(payload.exp) || payload.exp <= now) return false;
     const userAgentHash = (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24);
-    return payload.ua === userAgentHash;
+    if (payload.ua !== userAgentHash) return false;
+    return payload;
   } catch {
     return false;
   }
@@ -299,10 +368,27 @@ async function recordAccessAttempt(env, ipHash, succeeded) {
 
 async function handleAccessStatus(request, env, headers) {
   if (isIpAllowlisted(request, env)) {
-    return json({ ok: true, allowed: true, method: "ip_allowlist" }, 200, headers);
+    const grant = await createAccessToken(request, env, { accessMethod: "ip_allowlist" });
+    return json({
+      ok: true,
+      allowed: true,
+      method: "ip_allowlist",
+      token: grant.token,
+      expires_at: grant.expiresAt,
+      access_grant_id: grant.grantId,
+      access_method: grant.accessMethod
+    }, 200, headers);
   }
-  if (await verifyAccessToken(request, env)) {
-    return json({ ok: true, allowed: true, method: "access_token" }, 200, headers);
+  const tokenPayload = await verifyAccessToken(request, env);
+  if (tokenPayload) {
+    return json({
+      ok: true,
+      allowed: true,
+      method: "access_token",
+      access_grant_id: tokenPayload.gid || null,
+      access_method: tokenPayload.am || "legacy_token",
+      invite_id: Number.isInteger(tokenPayload.iid) ? tokenPayload.iid : null
+    }, 200, headers);
   }
   return json({ ok: true, allowed: false }, 401, headers);
 }
@@ -333,20 +419,33 @@ async function handleAccessVerification(request, env, headers) {
     }, 429, { ...headers, "Retry-After": String(ACCESS_RATE_WINDOW_MINUTES * 60) });
   }
 
-  const code = typeof body.code === "string" ? body.code.replace(/\D/g, "").slice(0, 6) : "";
-  const valid = await verifyTotp(code, env.ACCESS_TOTP_SECRET);
+  const rawCode = typeof body.code === "string" ? body.code.trim() : "";
+  const totpCode = rawCode.replace(/\D/g, "");
+  const isTotpCandidate = /^\d{6}$/.test(totpCode) && /^[\d\s-]+$/.test(rawCode);
+  const totpValid = isTotpCandidate && await verifyTotp(totpCode, env.ACCESS_TOTP_SECRET);
+  const invite = !totpValid ? await redeemInviteCode(request, env, rawCode, ipHash) : null;
+  const inviteValid = Number.isInteger(invite?.inviteId);
+  const valid = totpValid || inviteValid;
   await recordAccessAttempt(env, ipHash, valid);
   if (!valid) {
-    return json({ ok: false, allowed: false, error_message: "验证码错误或已过期，请重新输入。" }, 401, headers);
+    return json({ ok: false, allowed: false, error_message: "验证码无效、已过期或已使用，请重新确认。" }, 401, headers);
   }
 
-  const grant = await createAccessToken(request, env);
+  const accessMethod = inviteValid ? "invite_code" : "totp";
+  const grant = await createAccessToken(request, env, {
+    accessMethod,
+    inviteId: invite?.inviteId ?? null,
+    accessCode: inviteValid ? invite.accessCode : totpCode
+  });
   return json({
     ok: true,
     allowed: true,
-    method: "totp",
+    method: accessMethod,
     token: grant.token,
-    expires_at: grant.expiresAt
+    expires_at: grant.expiresAt,
+    access_grant_id: grant.grantId,
+    access_method: grant.accessMethod,
+    invite_id: grant.inviteId
   }, 200, headers);
 }
 
@@ -550,7 +649,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v16-access-gate" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v17-access-invite" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
@@ -635,6 +734,8 @@ export default {
     const hasIpReverseGeocode = !hasGps && optionalText(ipDetails?.district);
 
     const ipAddress = request.headers.get("CF-Connecting-IP") || "unknown";
+    const accessGrant = await verifyAccessToken(request, env);
+    const accessGrantRecord = accessGrant ? await lookupAccessGrant(env, accessGrant.gid) : null;
 
     await env.DB.prepare(`
       INSERT INTO analytics_events (
@@ -650,8 +751,9 @@ export default {
         client_tcp_rtt_ms, user_agent, accept_language, client_context_json,
         cf_ray, metro_code, tls_cipher, request_priority,
         sec_ch_ua, sec_ch_ua_mobile, sec_ch_ua_platform,
-        do_not_track, global_privacy_control
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        do_not_track, global_privacy_control,
+        access_grant_id, access_method, invite_id, access_code
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.event,
       optionalText(body.event_id, 100),
@@ -680,7 +782,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v16-access-gate",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v17-access-invite",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
@@ -711,7 +813,11 @@ export default {
       optionalText(secChUaMobile, 20),
       optionalText(secChUaPlatform, 100),
       optionalText(doNotTrack, 20),
-      optionalText(globalPrivacyControl, 20)
+      optionalText(globalPrivacyControl, 20),
+      accessGrant ? optionalText(accessGrant.gid, 100) : null,
+      accessGrant ? optionalText(accessGrant.am, 30) : null,
+      accessGrant && Number.isInteger(accessGrant.iid) ? accessGrant.iid : null,
+      accessGrantRecord ? optionalText(accessGrantRecord.access_code, 50) : null
     ).run();
 
     // page_stay is a cumulative session summary rather than a click stream.

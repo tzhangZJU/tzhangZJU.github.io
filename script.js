@@ -377,7 +377,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v16-access-gate";
+const analyticsConsentVersion = "v17-access-invite";
 const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
 const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
@@ -426,8 +426,14 @@ function readAccessGrant() {
   }
 }
 
-function storeAccessGrant(token, expiresAt) {
-  writeStorage(accessGrantStorageKey, JSON.stringify({ token, expires_at: expiresAt }));
+function storeAccessGrant(token, expiresAt, metadata = {}) {
+  writeStorage(accessGrantStorageKey, JSON.stringify({
+    token,
+    expires_at: expiresAt,
+    access_grant_id: metadata.access_grant_id || null,
+    access_method: metadata.access_method || metadata.method || null,
+    invite_id: Number.isInteger(metadata.invite_id) ? metadata.invite_id : null
+  }));
 }
 
 function showAccessGateError(message) {
@@ -481,8 +487,13 @@ async function initializeAccessGate() {
   try {
     const { response, body } = await accessApiRequest("/status", { method: "GET", headers });
     if (response.ok && body?.allowed) {
-      trackAnalyticsEvent(body.method === "ip_allowlist" ? "access_gate_ip_allowlist" : "access_gate_cached_grant");
+      if (body.token && body.expires_at) {
+        storeAccessGrant(body.token, Date.parse(body.expires_at), body);
+      } else if (grant) {
+        storeAccessGrant(grant.token, grant.expires_at, body);
+      }
       unlockHomepage();
+      trackAnalyticsEvent(body.method === "ip_allowlist" ? "access_gate_ip_allowlist" : "access_gate_cached_grant");
       return;
     }
   } catch {
@@ -499,13 +510,17 @@ async function initializeAccessGate() {
 
 accessGateForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const code = accessGateCode.value.replace(/\D/g, "").slice(0, 6);
-  accessGateCode.value = code;
-  if (code.length !== 6) {
-    showAccessGateError("请输入 6 位数字验证码。");
+  const rawCode = accessGateCode.value.trim().toUpperCase();
+  const numericCode = rawCode.replace(/\D/g, "");
+  const inviteCode = rawCode.replace(/[^A-Z2-9]/g, "").slice(0, 16);
+  const isNumericCandidate = /^[\d\s-]+$/.test(rawCode) && numericCode.length === 6;
+  const code = isNumericCandidate ? numericCode : inviteCode;
+  if (code.length !== 6 && code.length !== 16) {
+    showAccessGateError("请输入 6 位动态码或 16 位邀请码。");
     accessGateCode.focus();
     return;
   }
+  accessGateCode.value = code.length === 16 ? code.match(/.{1,4}/g).join("-") : code;
 
   showAccessGateError("");
   trackAnalyticsEvent("access_gate_submit", { interaction_method: "form_submit" });
@@ -519,13 +534,13 @@ accessGateForm.addEventListener("submit", async (event) => {
     });
     if (!response.ok || !body?.allowed || !body?.token || !body?.expires_at) {
       trackAnalyticsEvent("access_gate_rejected", { interaction_method: "form_submit" });
-      showAccessGateError(body?.error_message || "验证码错误或已过期，请重新输入。");
+      showAccessGateError(body?.error_message || "验证码无效、已过期或已使用，请重新确认。");
       accessGateCode.select();
       return;
     }
-    storeAccessGrant(body.token, Date.parse(body.expires_at));
-    trackAnalyticsEvent("access_gate_granted", { interaction_method: "totp" });
+    storeAccessGrant(body.token, Date.parse(body.expires_at), body);
     unlockHomepage();
+    trackAnalyticsEvent("access_gate_granted", { interaction_method: body.method || "access_code" });
   } catch {
     trackAnalyticsEvent("access_gate_service_error", { interaction_method: "verification" });
     showAccessGateError("网络连接失败，请检查网络后重试。");
@@ -639,6 +654,7 @@ function enqueueAnalyticsEvent(eventName, context = null) {
     visitor_id: analyticsVisitorId,
     session_id: analyticsSessionId,
     client_sent_at: new Date().toISOString(),
+    access_authorized: homepageAccessGranted,
     source_page: `${window.location.origin}${window.location.pathname}`,
     referrer: getReferrerOrigin(),
     consent_version: analyticsConsentVersion,
@@ -840,13 +856,16 @@ async function flushAnalyticsQueue() {
       const pendingEvent = queue[0];
       let delivered = false;
       try {
+        const requestHeaders = { "Content-Type": "text/plain;charset=UTF-8" };
+        const accessGrant = pendingEvent.access_authorized ? readAccessGrant() : null;
+        if (accessGrant?.token) requestHeaders.Authorization = `Bearer ${accessGrant.token}`;
         const response = await fetch(analyticsEndpoint, {
           method: "POST",
           mode: "cors",
           credentials: "omit",
           keepalive: true,
           cache: "no-store",
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          headers: requestHeaders,
           body: JSON.stringify(pendingEvent)
         });
         delivered = response.ok;
