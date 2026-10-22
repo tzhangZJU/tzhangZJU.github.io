@@ -6,7 +6,24 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const workerSource = await readFile(join(projectRoot, "cloudflare-pages-gateway", "_worker.js"), "utf8");
+const frontendSource = await readFile(join(projectRoot, "script.js"), "utf8");
 const worker = await import(`data:text/javascript;base64,${Buffer.from(workerSource).toString("base64")}`);
+
+const preAccessAnalytics = frontendSource.match(/function initializePreAccessAnalytics\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+assert.match(preAccessAnalytics, /trackAnalyticsEvent\("access_gate_arrival"\)/);
+assert.doesNotMatch(preAccessAnalytics, /trackPageView\(\)/);
+
+const accessGateInitialization = frontendSource.match(/async function initializeAccessGate\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+assert.ok(
+  accessGateInitialization.indexOf('trackAnalyticsEvent("access_gate_check")')
+    < accessGateInitialization.indexOf('trackAnalyticsEvent("access_gate_view")')
+);
+
+const completedGrant = frontendSource.match(/function completeAccessGrant\(method\) \{([\s\S]*?)\n\}/)?.[1] || "";
+assert.ok(
+  completedGrant.indexOf('trackAnalyticsEvent("access_gate_granted"')
+    < completedGrant.indexOf("trackPageView()")
+);
 
 const totpSecret = "JBSWY3DPEHPK3PXP";
 const tokenSecret = "test-session-secret-with-sufficient-entropy";
@@ -84,6 +101,17 @@ const denied = await worker.default.fetch(makeRequest("/access/status"), environ
 assert.equal(denied.status, 401);
 assert.equal((await denied.json()).allowed, false);
 
+const arrivalAnalytics = await worker.default.fetch(makeRequest("/events", {
+  method: "POST",
+  headers: { "Content-Type": "text/plain;charset=UTF-8" },
+  body: JSON.stringify({
+    event: "access_gate_arrival",
+    source_page: "https://tzhangzju.github.io/",
+    consent_version: "v24-access-event-order"
+  })
+}), environment);
+assert.equal(arrivalAnalytics.status, 201);
+
 const allowlisted = await worker.default.fetch(makeRequest("/access/status", {
   headers: { "CF-Connecting-IP": "203.0.113.9" }
 }), environment);
@@ -120,7 +148,7 @@ const linkedTotpAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v17-access-invite"
+    consent_version: "v24-access-event-order"
   })
 }), environment);
 assert.equal(linkedTotpAnalytics.status, 201);
@@ -152,7 +180,7 @@ const linkedAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v17-access-invite"
+    consent_version: "v24-access-event-order"
   })
 }), environment);
 assert.equal(linkedAnalytics.status, 201);

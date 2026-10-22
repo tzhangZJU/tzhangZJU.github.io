@@ -381,7 +381,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v23-wechat-contact";
+const analyticsConsentVersion = "v24-access-event-order";
 const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
 const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
@@ -471,10 +471,17 @@ document.addEventListener("keydown", (event) => {
 });
 
 function unlockHomepage() {
-  if (homepageAccessGranted) return;
+  if (homepageAccessGranted) return false;
   homepageAccessGranted = true;
   root.classList.remove("access-pending");
   accessGate.hidden = true;
+  return true;
+}
+
+function completeAccessGrant(method) {
+  if (!unlockHomepage()) return;
+  trackAnalyticsEvent("access_gate_granted", { interaction_method: method || "access_code" });
+  trackPageView();
   initializeAuthorizedExperience();
 }
 
@@ -498,16 +505,16 @@ async function accessApiRequest(path, options = {}) {
 
 async function initializeAccessGate() {
   trackAnalyticsEvent("access_gate_check");
+  trackAnalyticsEvent("access_gate_view");
   const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
   if (isLocalPreview && new URLSearchParams(window.location.search).has("access-gate-preview")) {
     accessGate.hidden = false;
-    trackAnalyticsEvent("access_gate_view");
     window.setTimeout(() => accessGateCode.focus(), 0);
     return;
   }
   if (isLocalPreview) {
     trackAnalyticsEvent("access_gate_local_bypass");
-    unlockHomepage();
+    completeAccessGrant("local_bypass");
     return;
   }
 
@@ -521,8 +528,7 @@ async function initializeAccessGate() {
       } else if (grant) {
         storeAccessGrant(grant.token, grant.expires_at, body);
       }
-      unlockHomepage();
-      trackAnalyticsEvent(body.method === "ip_allowlist" ? "access_gate_ip_allowlist" : "access_gate_cached_grant");
+      completeAccessGrant(body.access_method || body.method || "access_token");
       return;
     }
   } catch {
@@ -533,7 +539,6 @@ async function initializeAccessGate() {
 
   writeStorage(accessGrantStorageKey, "");
   accessGate.hidden = false;
-  trackAnalyticsEvent("access_gate_view");
   window.setTimeout(() => accessGateCode.focus(), 0);
 }
 
@@ -568,8 +573,7 @@ accessGateForm.addEventListener("submit", async (event) => {
       return;
     }
     storeAccessGrant(body.token, Date.parse(body.expires_at), body);
-    unlockHomepage();
-    trackAnalyticsEvent("access_gate_granted", { interaction_method: body.method || "access_code" });
+    completeAccessGrant(body.method || "access_code");
   } catch {
     trackAnalyticsEvent("access_gate_service_error", { interaction_method: "verification" });
     showAccessGateError("网络连接失败，请检查网络后重试。");
@@ -1055,7 +1059,7 @@ function initializePreAccessAnalytics() {
   writeStorage(analyticsConsentKey, "accepted");
   setConsentDialog(false);
   privacySettings.hidden = true;
-  trackPageView();
+  trackAnalyticsEvent("access_gate_arrival");
   void flushAnalyticsQueue();
 }
 

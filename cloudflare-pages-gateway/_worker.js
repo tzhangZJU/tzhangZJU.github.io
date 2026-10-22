@@ -6,7 +6,7 @@ const ACCESS_RATE_MAX_FAILURES = 5;
 const ACCESS_INVITE_LENGTH = 16;
 
 const ALLOWED_EVENTS = new Set([
-  "access_gate_cached_grant", "access_gate_check", "access_gate_granted",
+  "access_gate_arrival", "access_gate_cached_grant", "access_gate_check", "access_gate_granted",
   "access_gate_ip_allowlist", "access_gate_local_bypass", "access_gate_rejected",
   "access_gate_service_error", "access_gate_submit", "access_gate_view",
   "analytics_consent_accept", "back_to_top_click", "contact_embodied_model_click",
@@ -649,7 +649,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v17-access-invite" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v24-access-event-order" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
@@ -782,7 +782,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v17-access-invite",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v24-access-event-order",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
