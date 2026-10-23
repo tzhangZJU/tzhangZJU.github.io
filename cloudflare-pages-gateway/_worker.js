@@ -4,6 +4,9 @@ const ACCESS_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
 const ACCESS_RATE_WINDOW_MINUTES = 15;
 const ACCESS_RATE_MAX_FAILURES = 5;
 const ACCESS_INVITE_LENGTH = 16;
+// Override with ACCESS_REQUIRED_REGIONS (comma-separated), for example
+// "CN:JS,CN:SH". An explicitly empty value disables regional verification.
+const DEFAULT_ACCESS_REQUIRED_REGIONS = "CN:JS";
 
 const ALLOWED_EVENTS = new Set([
   "access_gate_arrival", "access_gate_cached_grant", "access_gate_check", "access_gate_granted",
@@ -127,6 +130,50 @@ function isIpAllowlisted(request, env) {
     ? env.ACCESS_IP_ALLOWLIST.split(",")
     : [];
   return configured.some((rule) => ipMatchesRule(ipAddress, rule));
+}
+
+function normalizeRegionName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "")
+    .replace(/(?:province|省)$/u, "");
+}
+
+function configuredAccessRegions(env) {
+  const rawValue = typeof env.ACCESS_REQUIRED_REGIONS === "string"
+    ? env.ACCESS_REQUIRED_REGIONS
+    : DEFAULT_ACCESS_REQUIRED_REGIONS;
+  return rawValue.split(",").map((value) => value.trim()).filter(Boolean);
+}
+
+function regionMatchesRule(cf, rawRule) {
+  const country = String(cf.country || "").trim().toUpperCase();
+  const regionCode = String(cf.regionCode || "").trim().toUpperCase();
+  const regionName = normalizeRegionName(cf.region);
+  const [ruleCountry, ruleRegion, ...extra] = rawRule.split(":").map((value) => value.trim());
+  if (extra.length) return false;
+
+  if (ruleRegion !== undefined) {
+    if (ruleCountry && ruleCountry.toUpperCase() !== country) return false;
+    return ruleRegion.toUpperCase() === regionCode
+      || normalizeRegionName(ruleRegion) === regionName;
+  }
+
+  return ruleCountry.toUpperCase() === regionCode
+    || normalizeRegionName(ruleCountry) === regionName;
+}
+
+function accessVerificationPolicy(request, env) {
+  const cf = request.cf || {};
+  const matchedRule = configuredAccessRegions(env).find((rule) => regionMatchesRule(cf, rule)) || null;
+  return {
+    required: Boolean(matchedRule),
+    matchedRule,
+    country: String(cf.country || "").trim().toUpperCase(),
+    regionCode: String(cf.regionCode || "").trim().toUpperCase(),
+    region: String(cf.region || "").trim()
+  };
 }
 
 function bytesToBase64Url(bytes) {
@@ -379,8 +426,9 @@ async function handleAccessStatus(request, env, headers) {
       access_method: grant.accessMethod
     }, 200, headers);
   }
+  const policy = accessVerificationPolicy(request, env);
   const tokenPayload = await verifyAccessToken(request, env);
-  if (tokenPayload) {
+  if (tokenPayload && (tokenPayload.am !== "region_bypass" || !policy.required)) {
     return json({
       ok: true,
       allowed: true,
@@ -390,12 +438,47 @@ async function handleAccessStatus(request, env, headers) {
       invite_id: Number.isInteger(tokenPayload.iid) ? tokenPayload.iid : null
     }, 200, headers);
   }
-  return json({ ok: true, allowed: false }, 401, headers);
+  if (!policy.required) {
+    const grant = await createAccessToken(request, env, { accessMethod: "region_bypass" });
+    return json({
+      ok: true,
+      allowed: true,
+      method: "region_bypass",
+      token: grant.token,
+      expires_at: grant.expiresAt,
+      access_grant_id: grant.grantId,
+      access_method: grant.accessMethod,
+      access_required: false
+    }, 200, headers);
+  }
+  return json({ ok: true, allowed: false, access_required: true }, 401, headers);
 }
 
 async function handleAccessVerification(request, env, headers) {
   if (isIpAllowlisted(request, env)) {
-    return json({ ok: true, allowed: true, method: "ip_allowlist" }, 200, headers);
+    const grant = await createAccessToken(request, env, { accessMethod: "ip_allowlist" });
+    return json({
+      ok: true,
+      allowed: true,
+      method: "ip_allowlist",
+      token: grant.token,
+      expires_at: grant.expiresAt,
+      access_grant_id: grant.grantId,
+      access_method: grant.accessMethod
+    }, 200, headers);
+  }
+  if (!accessVerificationPolicy(request, env).required) {
+    const grant = await createAccessToken(request, env, { accessMethod: "region_bypass" });
+    return json({
+      ok: true,
+      allowed: true,
+      method: "region_bypass",
+      token: grant.token,
+      expires_at: grant.expiresAt,
+      access_grant_id: grant.grantId,
+      access_method: grant.accessMethod,
+      access_required: false
+    }, 200, headers);
   }
   if (!env.ACCESS_TOTP_SECRET || !env.ACCESS_TOKEN_SECRET) {
     return json({ ok: false, allowed: false, error_message: "访问验证服务尚未完成配置。" }, 503, headers);
@@ -649,7 +732,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v24-access-event-order" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v25-regional-access-gate" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
@@ -782,7 +865,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v24-access-event-order",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v25-regional-access-gate",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),

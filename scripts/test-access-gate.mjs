@@ -7,7 +7,10 @@ import { fileURLToPath } from "node:url";
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const workerSource = await readFile(join(projectRoot, "cloudflare-pages-gateway", "_worker.js"), "utf8");
 const frontendSource = await readFile(join(projectRoot, "script.js"), "utf8");
+const homepageSource = await readFile(join(projectRoot, "index.html"), "utf8");
 const worker = await import(`data:text/javascript;base64,${Buffer.from(workerSource).toString("base64")}`);
+
+assert.match(homepageSource, /class="access-gate__panel" hidden/);
 
 const preAccessAnalytics = frontendSource.match(/function initializePreAccessAnalytics\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
 assert.match(preAccessAnalytics, /trackAnalyticsEvent\("access_gate_arrival"\)/);
@@ -83,11 +86,14 @@ function currentTotp(secret) {
 }
 
 function makeRequest(path, options = {}) {
+  const { cf = { country: "CN", regionCode: "JS", region: "Jiangsu" }, ...requestOptions } = options;
   const headers = new Headers(options.headers || {});
   headers.set("Origin", "https://tzhangzju.github.io");
   headers.set("User-Agent", "AccessGateTest/1.0");
   if (!headers.has("CF-Connecting-IP")) headers.set("CF-Connecting-IP", "198.51.100.8");
-  return new Request(`https://homepage-analytics-mobile.pages.dev${path}`, { ...options, headers });
+  const request = new Request(`https://homepage-analytics-mobile.pages.dev${path}`, { ...requestOptions, headers });
+  Object.defineProperty(request, "cf", { value: cf });
+  return request;
 }
 
 const environment = {
@@ -99,7 +105,44 @@ const environment = {
 
 const denied = await worker.default.fetch(makeRequest("/access/status"), environment);
 assert.equal(denied.status, 401);
-assert.equal((await denied.json()).allowed, false);
+const deniedBody = await denied.json();
+assert.equal(deniedBody.allowed, false);
+assert.equal(deniedBody.access_required, true);
+
+const regionBypass = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "CF-Connecting-IP": "198.51.100.20" },
+  cf: { country: "CN", regionCode: "SH", region: "Shanghai" }
+}), environment);
+assert.equal(regionBypass.status, 200);
+const regionBypassGrant = await regionBypass.json();
+assert.equal(regionBypassGrant.allowed, true);
+assert.equal(regionBypassGrant.method, "region_bypass");
+assert.ok(regionBypassGrant.token);
+
+const bypassTokenInRequiredRegion = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "Authorization": `Bearer ${regionBypassGrant.token}` }
+}), environment);
+assert.equal(bypassTokenInRequiredRegion.status, 401);
+assert.equal((await bypassTokenInRequiredRegion.json()).access_required, true);
+
+const configuredShanghaiPolicy = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "CF-Connecting-IP": "198.51.100.21" }
+}), { ...environment, ACCESS_REQUIRED_REGIONS: "CN:SH" });
+assert.equal(configuredShanghaiPolicy.status, 200);
+assert.equal((await configuredShanghaiPolicy.json()).method, "region_bypass");
+
+const configuredShanghaiDenied = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "CF-Connecting-IP": "198.51.100.22" },
+  cf: { country: "CN", regionCode: "SH", region: "Shanghai" }
+}), { ...environment, ACCESS_REQUIRED_REGIONS: "CN:SH" });
+assert.equal(configuredShanghaiDenied.status, 401);
+assert.equal((await configuredShanghaiDenied.json()).access_required, true);
+
+const emptyRegionalPolicy = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "CF-Connecting-IP": "198.51.100.23" }
+}), { ...environment, ACCESS_REQUIRED_REGIONS: "" });
+assert.equal(emptyRegionalPolicy.status, 200);
+assert.equal((await emptyRegionalPolicy.json()).method, "region_bypass");
 
 const arrivalAnalytics = await worker.default.fetch(makeRequest("/events", {
   method: "POST",
@@ -107,7 +150,7 @@ const arrivalAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "access_gate_arrival",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v24-access-event-order"
+    consent_version: "v25-regional-access-gate"
   })
 }), environment);
 assert.equal(arrivalAnalytics.status, 201);
@@ -148,7 +191,7 @@ const linkedTotpAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v24-access-event-order"
+    consent_version: "v25-regional-access-gate"
   })
 }), environment);
 assert.equal(linkedTotpAnalytics.status, 201);
@@ -180,7 +223,7 @@ const linkedAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v24-access-event-order"
+    consent_version: "v25-regional-access-gate"
   })
 }), environment);
 assert.equal(linkedAnalytics.status, 201);
