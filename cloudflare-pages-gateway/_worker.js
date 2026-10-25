@@ -30,7 +30,7 @@ const ALLOWED_EVENTS = new Set([
   "paper_realtime_vla_click", "paper_rm_wam_click", "paper_tarsphere_click",
   "paper_trajectory_peaks_click", "ppt_download_click", "privacy_settings_click",
   "realtime_vla_project_click", "resource_download_click", "resource_media_open",
-  "robodojo_leaderboard_click", "screenshot_shortcut_attempt", "theme_toggle_click",
+  "robodojo_leaderboard_click", "roborsi_project_click", "screenshot_shortcut_attempt", "theme_toggle_click",
   "vla_interview_click"
 ]);
 
@@ -732,7 +732,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v25-regional-access-gate" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v26-roborsi-work" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
@@ -865,7 +865,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v25-regional-access-gate",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v26-roborsi-work",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),

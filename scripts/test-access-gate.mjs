@@ -150,10 +150,21 @@ const arrivalAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "access_gate_arrival",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v25-regional-access-gate"
+    consent_version: "v26-roborsi-work"
   })
 }), environment);
 assert.equal(arrivalAnalytics.status, 201);
+
+const roboRsiAnalytics = await worker.default.fetch(makeRequest("/events", {
+  method: "POST",
+  headers: { "Content-Type": "text/plain;charset=UTF-8" },
+  body: JSON.stringify({
+    event: "roborsi_project_click",
+    source_page: "https://tzhangzju.github.io/",
+    consent_version: "v26-roborsi-work"
+  })
+}), environment);
+assert.equal(roboRsiAnalytics.status, 201);
 
 const allowlisted = await worker.default.fetch(makeRequest("/access/status", {
   headers: { "CF-Connecting-IP": "203.0.113.9" }
@@ -191,7 +202,7 @@ const linkedTotpAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v25-regional-access-gate"
+    consent_version: "v26-roborsi-work"
   })
 }), environment);
 assert.equal(linkedTotpAnalytics.status, 201);
@@ -223,7 +234,7 @@ const linkedAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v25-regional-access-gate"
+    consent_version: "v26-roborsi-work"
   })
 }), environment);
 assert.equal(linkedAnalytics.status, 201);

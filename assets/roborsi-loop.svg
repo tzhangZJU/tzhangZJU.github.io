@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+  <title id="title">The RoboDojo feedback loop</title>
+  <desc id="desc">Data feeds training and evaluation. A fine-grained evaluation report drives Data Agent and Training Agent. Their improvements feed the next training iteration and return to data processing.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#78918f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <linearGradient id="panel" x2="1" y2="1"><stop stop-color="#f4f7f5"/><stop offset="1" stop-color="#eaf0ed"/></linearGradient>
+  </defs>
+  <rect width="1000" height="660" rx="24" fill="url(#panel)"/>
+  <g font-family="Inter,Arial,sans-serif">
+    <text x="70" y="46" fill="#647c79" font-size="11" font-weight="600" letter-spacing="2.5">ROBODOJO / EMBODIED RSI</text>
+    <text x="70" y="81" fill="#233c3b" font-size="27" font-weight="600">Evaluate to train better.</text>
+    <text x="930" y="78" text-anchor="end" fill="#647c79" font-size="13">Data → Training → Evaluation</text>
+  </g>
+  <g fill="none" stroke="#78918f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)">
+    <path d="M320 179H367"/><path d="M630 179H677"/><path d="M805 230V251Q805 267 789 267H516Q500 267 500 283"/>
+    <path d="M500 373V393H287Q275 393 275 405V431"/><path d="M500 393H713Q725 393 725 405V431"/>
+    <path d="M275 527V544Q275 557 288 557H397V578"/><path d="M725 527V544Q725 557 712 557H603V578"/>
+    <path d="M340 609H54Q36 609 36 591V196Q36 179 54 179H67" stroke-dasharray="5 6"/>
+  </g>
+  <g fill="#fff" stroke="#d2deda" stroke-width="1">
+    <rect x="70" y="128" width="250" height="102" rx="14"/><rect x="380" y="128" width="250" height="102" rx="14"/><rect x="690" y="128" width="240" height="102" rx="14"/>
+    <rect x="105" y="436" width="340" height="91" rx="14"/><rect x="555" y="436" width="340" height="91" rx="14"/><rect x="340" y="581" width="320" height="56" rx="12"/>
+  </g>
+  <rect x="225" y="288" width="550" height="85" rx="14" fill="#294d4b"/>
+  <g font-family="Inter,Arial,sans-serif">
+    <g fill="#edf3f0"><circle cx="101" cy="157" r="15"/><circle cx="411" cy="157" r="15"/><circle cx="721" cy="157" r="15"/></g>
+    <g text-anchor="middle" fill="#647c79" font-size="10" font-weight="600"><text x="101" y="161">01</text><text x="411" y="161">02</text><text x="721" y="161">03</text></g>
+    <g fill="#233c3b" font-size="23" font-weight="600"><text x="126" y="165">Data</text><text x="436" y="165">Training</text><text x="746" y="165">Evaluation</text></g>
+    <g fill="#647c79" font-size="14"><text x="94" y="205">Inspect · Clean · Label</text><text x="404" y="205">Optimize the recipe</text><text x="714" y="205">Full RoboDojo · 2 hours</text></g>
+    <g text-anchor="middle"><text x="500" y="324" fill="#fff" font-size="23" font-weight="600">Fine-grained Evaluation Report</text><text x="500" y="351" fill="#c8dfda" font-size="14">Action → Keyframe → Frame Window</text></g>
+    <g fill="#647c79" font-size="10" font-weight="600" letter-spacing="1.8"><text x="127" y="459">DATA FEEDBACK</text><text x="577" y="459">TRAINING FEEDBACK</text></g>
+    <g fill="#233c3b" font-size="21" font-weight="600"><text x="127" y="486">Data Agent</text><text x="577" y="486">Training Agent</text></g>
+    <g fill="#647c79" font-size="13"><text x="127" y="510">Repair data · Re-label keyframes</text><text x="577" y="510">Sampling · Learning rate · Loss</text></g>
+    <text x="500" y="615" text-anchor="middle" fill="#233c3b" font-size="17" font-weight="600">↻  Next training iteration</text>
+  </g>
+</svg>

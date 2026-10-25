@@ -120,6 +120,7 @@ const translations = {
     eapnBody: "对齐真实执行位移，将跨块噪声轨迹与动作历史传递到异步重规划中，保持生成策略在连续控制中的行为一致性。",
     ctpBody: "以单次前向同时预测多条动作轨迹及其概率，通过峰值专门化和跨块信念传递兼顾多模态、低时延与闭环一致性。",
     memoryBody: "以时序记忆追踪执行状态，以空间检索找回历史视觉证据，让 VLA 处理依赖历史的操作任务。",
+    roboRsiBody: "让评测成为下一轮数据处理与训练的起点：RoboDojo 在约 2 小时内完成全量评测，并以原子动作、关键帧和帧窗口级诊断驱动 Data Agent 与 Training Agent 持续优化。",
     projectPage: "项目主页",
     chineseIntro: "中文介绍",
     papersTitle: "研究论文与技术报告",
@@ -286,6 +287,7 @@ const translations = {
     eapnBody: "Aligns cross-chunk noise trajectories and action history with actual execution displacement, preserving behavioral consistency during asynchronous closed-loop replanning.",
     ctpBody: "Predicts multiple action trajectories and their probability masses in one forward pass, combining multimodality, low latency, and closed-loop consistency through peak specialization and belief transport.",
     memoryBody: "Temporal memory tracks execution state while spatial retrieval recovers historical visual evidence for history-dependent VLA tasks.",
+    roboRsiBody: "Makes evaluation the starting point for the next data and training iteration: a full RoboDojo evaluation finishes in about two hours, while action-, keyframe-, and frame-window-level diagnosis drives Data Agent and Training Agent improvements.",
     projectPage: "Project page",
     chineseIntro: "Chinese article",
     papersTitle: "Research papers and technical reports",
@@ -381,7 +383,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v25-regional-access-gate";
+const analyticsConsentVersion = "v26-roborsi-work";
 const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
 const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
