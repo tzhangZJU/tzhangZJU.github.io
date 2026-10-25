@@ -11,6 +11,10 @@ const homepageSource = await readFile(join(projectRoot, "index.html"), "utf8");
 const worker = await import(`data:text/javascript;base64,${Buffer.from(workerSource).toString("base64")}`);
 
 assert.match(homepageSource, /class="access-gate__panel" hidden/);
+assert.equal((homepageSource.match(/data-i18n-href="roboRsiHref"/g) || []).length, 2);
+assert.match(frontendSource, /roboRsiHref: "https:\/\/embodied\.magiclab\.top\/works\/embodied-rsi\/index\.html"/);
+assert.match(frontendSource, /roboRsiHref: "https:\/\/embodied\.magiclab\.top\/works\/embodied-rsi\/en\.html"/);
+assert.match(frontendSource, /document\.querySelectorAll\("\[data-i18n-href\]"\)/);
 
 const preAccessAnalytics = frontendSource.match(/function initializePreAccessAnalytics\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
 assert.match(preAccessAnalytics, /trackAnalyticsEvent\("access_gate_arrival"\)/);
@@ -150,7 +154,7 @@ const arrivalAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "access_gate_arrival",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v26-roborsi-work"
+    consent_version: "v27-roborsi-language-links"
   })
 }), environment);
 assert.equal(arrivalAnalytics.status, 201);
@@ -161,7 +165,7 @@ const roboRsiAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "roborsi_project_click",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v26-roborsi-work"
+    consent_version: "v27-roborsi-language-links"
   })
 }), environment);
 assert.equal(roboRsiAnalytics.status, 201);
@@ -202,7 +206,7 @@ const linkedTotpAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v26-roborsi-work"
+    consent_version: "v27-roborsi-language-links"
   })
 }), environment);
 assert.equal(linkedTotpAnalytics.status, 201);
@@ -234,7 +238,7 @@ const linkedAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v26-roborsi-work"
+    consent_version: "v27-roborsi-language-links"
   })
 }), environment);
 assert.equal(linkedAnalytics.status, 201);
