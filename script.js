@@ -128,6 +128,17 @@ const translations = {
     papersNote: "* 表示通讯作者&项目负责人；Under Review 状态按 2026 年 10 月材料整理。",
     demosTitle: "让方法回到真实任务",
     demosNote: "代表性真机演示与 WAIC、WRC、IFA 等展演。",
+    wrcReportTitle: "WRC 现场报道",
+    wrcReportAria: "查看 WRC 现场报道",
+    wrcReportImageAlt: "WRC 现场人形机器人主视觉",
+    wrcReportNote: "WRC 现场报道",
+    readReport: "查看报道",
+    reportSourceLabel: "报道来源",
+    reportFocusLabel: "展示内容",
+    reportAccessLabel: "观看入口",
+    wrcReportSource: "世界机器人大会（WRC）现场报道，点击查看视频号原始内容。",
+    wrcReportFocus: "聚焦具身智能的真实机器人演示与展会场景呈现，包括衣服折叠、纸箱封包、年画拓印等。",
+    wrcReportAccess: "视频号报道入口；以现场视角了解真实任务的演示过程。",
     foldCloth: "衣服折叠",
     foldBox: "纸箱封包",
     inkRubbing: "年画拓印",
@@ -296,6 +307,17 @@ const translations = {
     papersNote: "* denotes corresponding author & project lead. Under-review status reflects the October 2026 source material.",
     demosTitle: "Methods, returned to real tasks",
     demosNote: "Representative real-robot demos and exhibits at WAIC, WRC, and IFA.",
+    wrcReportTitle: "WRC on-site report",
+    wrcReportAria: "View the WRC on-site report",
+    wrcReportImageAlt: "Humanoid robot at WRC",
+    wrcReportNote: "WRC on-site report",
+    readReport: "View report",
+    reportSourceLabel: "SOURCE",
+    reportFocusLabel: "FOCUS",
+    reportAccessLabel: "WATCH",
+    wrcReportSource: "An on-site report from the World Robot Conference (WRC); open the original WeChat Channels coverage.",
+    wrcReportFocus: "Real-robot demonstrations and the exhibition setting for embodied AI, including clothes folding, carton packing, and New Year print rubbing.",
+    wrcReportAccess: "Original WeChat Channels coverage, viewed from the perspective of a real on-site task.",
     foldCloth: "Clothes Folding",
     foldBox: "Carton Packing",
     inkRubbing: "New Year Print Rubbing",
@@ -385,7 +407,7 @@ document.querySelectorAll("[data-email-link]").forEach((link) => {
 const analyticsEndpoint = "https://homepage-analytics-mobile.pages.dev/events";
 const analyticsLocationPolicyEndpoint = "https://homepage-analytics-mobile.pages.dev/location-policy";
 // Bump this value for every frontend release so D1 records remain attributable.
-const analyticsConsentVersion = "v27-roborsi-language-links";
+const analyticsConsentVersion = "v29-wrc-report-cover";
 const accessApiBase = "https://homepage-analytics-mobile.pages.dev/access";
 const accessGrantStorageKey = "homepage-access-grant-v1";
 const analyticsConsentKey = "analytics-consent-v2";
@@ -1135,6 +1157,10 @@ function applyLanguage(language, persist = true) {
     const key = element.getAttribute("aria-expanded") === "true" ? "closeMenu" : element.dataset.i18nAria;
     const value = dictionary[key];
     if (value) element.setAttribute("aria-label", value);
+  });
+  document.querySelectorAll("[data-i18n-alt]").forEach((element) => {
+    const value = dictionary[element.dataset.i18nAlt];
+    if (value) element.setAttribute("alt", value);
   });
   document.querySelectorAll("[data-i18n-href]").forEach((element) => {
     const value = dictionary[element.dataset.i18nHref];

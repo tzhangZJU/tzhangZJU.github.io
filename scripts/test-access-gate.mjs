@@ -15,6 +15,14 @@ assert.equal((homepageSource.match(/data-i18n-href="roboRsiHref"/g) || []).lengt
 assert.match(frontendSource, /roboRsiHref: "https:\/\/embodied\.magiclab\.top\/works\/embodied-rsi\/index\.html"/);
 assert.match(frontendSource, /roboRsiHref: "https:\/\/embodied\.magiclab\.top\/works\/embodied-rsi\/en\.html"/);
 assert.match(frontendSource, /document\.querySelectorAll\("\[data-i18n-href\]"\)/);
+assert.match(homepageSource, /href="https:\/\/weixin\.qq\.com\/sph\/Af3bcGyxVc"/);
+assert.match(homepageSource, /data-analytics-event="wrc_report_click"/);
+assert.match(homepageSource, /src="assets\/demos\/wrc-report-cover\.png"/);
+assert.match(frontendSource, /wrcReportTitle: "WRC 现场报道"/);
+assert.match(frontendSource, /wrcReportTitle: "WRC on-site report"/);
+assert.match(frontendSource, /包括衣服折叠、纸箱封包、年画拓印等。/);
+assert.match(frontendSource, /const analyticsConsentVersion = "v29-wrc-report-cover"/);
+assert.match(frontendSource, /document\.querySelectorAll\("\[data-i18n-alt\]"\)/);
 
 const preAccessAnalytics = frontendSource.match(/function initializePreAccessAnalytics\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
 assert.match(preAccessAnalytics, /trackAnalyticsEvent\("access_gate_arrival"\)/);
@@ -154,7 +162,7 @@ const arrivalAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "access_gate_arrival",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v27-roborsi-language-links"
+    consent_version: "v29-wrc-report-cover"
   })
 }), environment);
 assert.equal(arrivalAnalytics.status, 201);
@@ -165,7 +173,7 @@ const roboRsiAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "roborsi_project_click",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v27-roborsi-language-links"
+    consent_version: "v29-wrc-report-cover"
   })
 }), environment);
 assert.equal(roboRsiAnalytics.status, 201);
@@ -206,7 +214,7 @@ const linkedTotpAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v27-roborsi-language-links"
+    consent_version: "v29-wrc-report-cover"
   })
 }), environment);
 assert.equal(linkedTotpAnalytics.status, 201);
@@ -238,7 +246,7 @@ const linkedAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v27-roborsi-language-links"
+    consent_version: "v29-wrc-report-cover"
   })
 }), environment);
 assert.equal(linkedAnalytics.status, 201);

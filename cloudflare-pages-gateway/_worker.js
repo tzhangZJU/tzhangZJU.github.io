@@ -732,7 +732,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v27-roborsi-language-links" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v29-wrc-report-cover" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
@@ -865,7 +865,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v27-roborsi-language-links",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v29-wrc-report-cover",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
