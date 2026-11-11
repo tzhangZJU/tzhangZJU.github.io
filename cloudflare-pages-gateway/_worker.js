@@ -5,8 +5,9 @@ const ACCESS_RATE_WINDOW_MINUTES = 15;
 const ACCESS_RATE_MAX_FAILURES = 5;
 const ACCESS_INVITE_LENGTH = 16;
 // Override with ACCESS_REQUIRED_REGIONS (comma-separated), for example
-// "CN:JS,CN:SH". An explicitly empty value disables regional verification.
-const DEFAULT_ACCESS_REQUIRED_REGIONS = "CN:JS";
+// "*" for every location or "CN:JS,CN:SH" for a regional policy. An
+// explicitly empty value disables verification.
+const DEFAULT_ACCESS_REQUIRED_REGIONS = "*";
 
 const ALLOWED_EVENTS = new Set([
   "access_gate_arrival", "access_gate_cached_grant", "access_gate_check", "access_gate_granted",
@@ -148,6 +149,7 @@ function configuredAccessRegions(env) {
 }
 
 function regionMatchesRule(cf, rawRule) {
+  if (rawRule === "*") return true;
   const country = String(cf.country || "").trim().toUpperCase();
   const regionCode = String(cf.regionCode || "").trim().toUpperCase();
   const regionName = normalizeRegionName(cf.region);
@@ -732,7 +734,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v29-wrc-report-cover" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v30-global-access-gate" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
@@ -865,7 +867,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v29-wrc-report-cover",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v30-global-access-gate",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
