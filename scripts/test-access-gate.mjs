@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const workerSource = await readFile(join(projectRoot, "cloudflare-pages-gateway", "_worker.js"), "utf8");
+const accessPolicyMigration = await readFile(join(projectRoot, "cloudflare-migrations", "0005_access_policy.sql"), "utf8");
 const frontendSource = await readFile(join(projectRoot, "script.js"), "utf8");
 const homepageSource = await readFile(join(projectRoot, "index.html"), "utf8");
 const worker = await import(`data:text/javascript;base64,${Buffer.from(workerSource).toString("base64")}`);
@@ -23,6 +24,9 @@ assert.match(frontendSource, /wrcReportTitle: "WRC on-site report"/);
 assert.match(frontendSource, /包括衣服折叠、纸箱封包、年画拓印等。/);
 assert.match(frontendSource, /const analyticsConsentVersion = "v31-jiangsu-access-gate"/);
 assert.match(frontendSource, /document\.querySelectorAll\("\[data-i18n-alt\]"\)/);
+assert.match(workerSource, /const ACCESS_POLICY_KEY = "required_regions"/);
+assert.match(workerSource, /url\.pathname === "\/admin\/policy"/);
+assert.match(accessPolicyMigration, /CREATE TABLE IF NOT EXISTS access_policy/);
 
 const preAccessAnalytics = frontendSource.match(/function initializePreAccessAnalytics\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
 assert.match(preAccessAnalytics, /trackAnalyticsEvent\("access_gate_arrival"\)/);
@@ -47,12 +51,16 @@ const inviteHash = createHash("sha256").update(inviteCode.replaceAll("-", "")).d
 const unusedInviteHashes = new Set([inviteHash]);
 const accessGrantRecords = new Map();
 let lastAnalyticsBindings = null;
+let storedAccessPolicy = null;
 const database = {
   prepare(sql) {
     let bindings = [];
     const statement = {
       bind(...values) { bindings = values; return statement; },
       async first() {
+        if (/SELECT policy_value(?:, updated_at)?\s+FROM access_policy/i.test(sql)) {
+          return storedAccessPolicy;
+        }
         if (/UPDATE access_invites/i.test(sql)) {
           const hash = bindings[2];
           return unusedInviteHashes.delete(hash) ? { id: 42 } : null;
@@ -63,6 +71,9 @@ const database = {
         return { count: 0 };
       },
       async run() {
+        if (/INSERT INTO access_policy/i.test(sql)) {
+          storedAccessPolicy = { policy_value: bindings[1], updated_at: "2026-11-14 00:00:00" };
+        }
         if (/INSERT INTO access_grants/i.test(sql)) {
           accessGrantRecords.set(bindings[0], {
             access_method: bindings[1],
@@ -132,6 +143,19 @@ const nonJiangsuBypass = await worker.default.fetch(makeRequest("/access/status"
 assert.equal(nonJiangsuBypass.status, 200);
 assert.equal((await nonJiangsuBypass.json()).method, "region_bypass");
 
+storedAccessPolicy = { policy_value: "CN:SH", updated_at: "2026-11-14 00:00:00" };
+const storedPolicyJiangsuBypass = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "CF-Connecting-IP": "198.51.100.24" }
+}), environment);
+assert.equal(storedPolicyJiangsuBypass.status, 200);
+assert.equal((await storedPolicyJiangsuBypass.json()).method, "region_bypass");
+const storedPolicyShanghaiDenied = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "CF-Connecting-IP": "198.51.100.25" },
+  cf: { country: "CN", regionCode: "SH", region: "Shanghai" }
+}), environment);
+assert.equal(storedPolicyShanghaiDenied.status, 401);
+storedAccessPolicy = null;
+
 const configuredShanghaiPolicy = await worker.default.fetch(makeRequest("/access/status", {
   headers: { "CF-Connecting-IP": "198.51.100.21" }
 }), { ...environment, ACCESS_REQUIRED_REGIONS: "CN:SH" });
@@ -180,6 +204,43 @@ assert.equal(allowlisted.status, 200);
 assert.equal((await allowlisted.json()).method, "ip_allowlist");
 
 const totpCode = currentTotp(totpSecret);
+const adminPage = await worker.default.fetch(makeRequest("/admin"), environment);
+assert.equal(adminPage.status, 200);
+assert.match(await adminPage.text(), /访问验证码策略/);
+const unauthenticatedAdminRead = await worker.default.fetch(makeRequest("/admin/policy"), environment);
+assert.equal(unauthenticatedAdminRead.status, 401);
+const adminLogin = await worker.default.fetch(makeRequest("/admin/session", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "CF-Connecting-IP": "198.51.100.30" },
+  body: JSON.stringify({ code: totpCode })
+}), environment);
+assert.equal(adminLogin.status, 200);
+const adminSession = await adminLogin.json();
+assert.ok(adminSession.token);
+const adminRead = await worker.default.fetch(makeRequest("/admin/policy", {
+  headers: { "Authorization": `Bearer ${adminSession.token}` }
+}), environment);
+assert.equal(adminRead.status, 200);
+assert.equal((await adminRead.json()).policy.value, "CN:JS");
+const adminUpdate = await worker.default.fetch(makeRequest("/admin/policy", {
+  method: "PUT",
+  headers: { "Content-Type": "application/json", "Authorization": `Bearer ${adminSession.token}` },
+  body: JSON.stringify({ required_regions: "*" })
+}), environment);
+assert.equal(adminUpdate.status, 200);
+assert.equal((await adminUpdate.json()).policy.value, "*");
+const globalPolicyAfterAdminUpdate = await worker.default.fetch(makeRequest("/access/status", {
+  headers: { "CF-Connecting-IP": "198.51.100.31" },
+  cf: { country: "CN", regionCode: "SH", region: "Shanghai" }
+}), environment);
+assert.equal(globalPolicyAfterAdminUpdate.status, 401);
+const adminReset = await worker.default.fetch(makeRequest("/admin/policy", {
+  method: "PUT",
+  headers: { "Content-Type": "application/json", "Authorization": `Bearer ${adminSession.token}` },
+  body: JSON.stringify({ required_regions: "CN:JS" })
+}), environment);
+assert.equal(adminReset.status, 200);
+
 const verify = await worker.default.fetch(makeRequest("/access/verify", {
   method: "POST",
   headers: { "Content-Type": "application/json" },

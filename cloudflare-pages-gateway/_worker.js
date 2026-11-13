@@ -4,6 +4,8 @@ const ACCESS_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
 const ACCESS_RATE_WINDOW_MINUTES = 15;
 const ACCESS_RATE_MAX_FAILURES = 5;
 const ACCESS_INVITE_LENGTH = 16;
+const ADMIN_SESSION_TTL_SECONDS = 15 * 60;
+const ACCESS_POLICY_KEY = "required_regions";
 // Override with ACCESS_REQUIRED_REGIONS (comma-separated), for example
 // "*" for every location or "CN:JS,CN:SH" for a regional policy. An
 // explicitly empty value disables verification.
@@ -141,11 +143,15 @@ function normalizeRegionName(value) {
     .replace(/(?:province|省)$/u, "");
 }
 
+function parseAccessRegions(rawValue) {
+  return String(rawValue || "").split(",").map((value) => value.trim()).filter(Boolean);
+}
+
 function configuredAccessRegions(env) {
   const rawValue = typeof env.ACCESS_REQUIRED_REGIONS === "string"
     ? env.ACCESS_REQUIRED_REGIONS
     : DEFAULT_ACCESS_REQUIRED_REGIONS;
-  return rawValue.split(",").map((value) => value.trim()).filter(Boolean);
+  return parseAccessRegions(rawValue);
 }
 
 function regionMatchesRule(cf, rawRule) {
@@ -166,12 +172,15 @@ function regionMatchesRule(cf, rawRule) {
     || normalizeRegionName(ruleCountry) === regionName;
 }
 
-function accessVerificationPolicy(request, env) {
+async function accessVerificationPolicy(request, env) {
   const cf = request.cf || {};
-  const matchedRule = configuredAccessRegions(env).find((rule) => regionMatchesRule(cf, rule)) || null;
+  const storedPolicy = await readAccessPolicy(env);
+  const matchedRule = storedPolicy.regions.find((rule) => regionMatchesRule(cf, rule)) || null;
   return {
     required: Boolean(matchedRule),
     matchedRule,
+    regions: storedPolicy.regions,
+    source: storedPolicy.source,
     country: String(cf.country || "").trim().toUpperCase(),
     regionCode: String(cf.regionCode || "").trim().toUpperCase(),
     region: String(cf.region || "").trim()
@@ -378,6 +387,168 @@ async function verifyAccessToken(request, env) {
   }
 }
 
+function adminHeaders() {
+  return {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store",
+    "Content-Security-Policy": "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
+    "Referrer-Policy": "no-referrer"
+  };
+}
+
+function normalizeAdminPolicy(rawValue) {
+  const value = typeof rawValue === "string" ? rawValue.trim() : "";
+  if (!value) return { value: "", regions: [] };
+  if (value.length > 300) return null;
+  const regions = [...new Set(parseAccessRegions(value))];
+  if (!regions.length || regions.length > 20) return null;
+  if (regions.includes("*") && regions.length !== 1) return null;
+  if (regions.some((rule) => rule !== "*" && !/^[A-Za-z]{2}(?::[A-Za-z0-9_-]{1,50})?$/.test(rule))) return null;
+  return { value: regions.join(","), regions };
+}
+
+async function createAdminSession(request, env) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    v: 1,
+    scope: "access_policy_admin",
+    iat: now,
+    exp: now + ADMIN_SESSION_TTL_SECONDS,
+    ua: (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24)
+  };
+  const encodedPayload = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const signature = await signAccessValue(encodedPayload, env.ACCESS_TOKEN_SECRET);
+  return `${encodedPayload}.${bytesToBase64Url(signature)}`;
+}
+
+async function verifyAdminSession(request, env) {
+  if (!env.ACCESS_TOKEN_SECRET) return false;
+  const authorization = request.headers.get("Authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+  const [encodedPayload, encodedSignature, ...rest] = token.split(".");
+  if (!encodedPayload || !encodedSignature || rest.length) return false;
+  const suppliedSignature = base64UrlToBytes(encodedSignature);
+  if (!suppliedSignature) return false;
+  const expectedSignature = await signAccessValue(encodedPayload, env.ACCESS_TOKEN_SECRET);
+  if (!constantTimeEqual(suppliedSignature, expectedSignature)) return false;
+  const payloadBytes = base64UrlToBytes(encodedPayload);
+  if (!payloadBytes) return false;
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(payloadBytes));
+    const userAgentHash = (await sha256Hex(request.headers.get("User-Agent") || "")).slice(0, 24);
+    return payload?.v === 1
+      && payload.scope === "access_policy_admin"
+      && Number.isFinite(payload.exp)
+      && payload.exp > Math.floor(Date.now() / 1000)
+      && payload.ua === userAgentHash;
+  } catch {
+    return false;
+  }
+}
+
+function fallbackPolicyValue(env) {
+  return typeof env.ACCESS_REQUIRED_REGIONS === "string"
+    ? env.ACCESS_REQUIRED_REGIONS
+    : DEFAULT_ACCESS_REQUIRED_REGIONS;
+}
+
+async function readAccessPolicy(env) {
+  try {
+    const stored = await env.DB.prepare(`
+      SELECT policy_value, updated_at FROM access_policy WHERE policy_key = ?
+    `).bind(ACCESS_POLICY_KEY).first();
+    if (typeof stored?.policy_value === "string") {
+      return {
+        value: stored.policy_value,
+        regions: parseAccessRegions(stored.policy_value),
+        source: "d1",
+        updatedAt: stored.updated_at || null
+      };
+    }
+  } catch {
+    // The worker remains usable before migration or if D1 has a transient failure.
+  }
+  const value = fallbackPolicyValue(env);
+  return { value, regions: parseAccessRegions(value), source: "environment", updatedAt: null };
+}
+
+async function handleAdminSession(request, env) {
+  if (!env.ACCESS_TOTP_SECRET || !env.ACCESS_TOKEN_SECRET) {
+    return json({ ok: false, error: "admin_service_unavailable" }, 503, { "Cache-Control": "no-store" });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "invalid_code" }, 400, { "Cache-Control": "no-store" });
+  }
+  const code = typeof body.code === "string" ? body.code.replace(/\D/g, "") : "";
+  const clientIp = getClientIp(request);
+  const ipHash = await sha256Hex(`${clientIp}:${env.ACCESS_TOKEN_SECRET}`);
+  const failures = await accessFailureCount(env, ipHash);
+  if (failures >= ACCESS_RATE_MAX_FAILURES) {
+    return json({ ok: false, error: "rate_limited" }, 429, { "Cache-Control": "no-store", "Retry-After": String(ACCESS_RATE_WINDOW_MINUTES * 60) });
+  }
+  const valid = await verifyTotp(code, env.ACCESS_TOTP_SECRET);
+  await recordAccessAttempt(env, ipHash, valid);
+  if (!valid) return json({ ok: false, error: "invalid_code" }, 401, { "Cache-Control": "no-store" });
+  const token = await createAdminSession(request, env);
+  return json({ ok: true, token, expires_in_seconds: ADMIN_SESSION_TTL_SECONDS }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleAdminPolicyRead(request, env) {
+  if (!(await verifyAdminSession(request, env))) {
+    return json({ ok: false, error: "admin_unauthorized" }, 401, { "Cache-Control": "no-store" });
+  }
+  const policy = await readAccessPolicy(env);
+  return json({ ok: true, policy }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleAdminPolicyUpdate(request, env) {
+  if (!(await verifyAdminSession(request, env))) {
+    return json({ ok: false, error: "admin_unauthorized" }, 401, { "Cache-Control": "no-store" });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "invalid_policy" }, 400, { "Cache-Control": "no-store" });
+  }
+  const policy = normalizeAdminPolicy(body.required_regions);
+  if (!policy) return json({ ok: false, error: "invalid_policy" }, 400, { "Cache-Control": "no-store" });
+  try {
+    await env.DB.prepare(`
+      INSERT INTO access_policy (policy_key, policy_value, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(policy_key) DO UPDATE SET
+        policy_value = excluded.policy_value,
+        updated_at = CURRENT_TIMESTAMP
+    `).bind(ACCESS_POLICY_KEY, policy.value).run();
+  } catch {
+    return json({ ok: false, error: "policy_store_unavailable" }, 503, { "Cache-Control": "no-store" });
+  }
+  return json({
+    ok: true,
+    policy: { ...policy, source: "d1", updatedAt: new Date().toISOString() }
+  }, 200, { "Cache-Control": "no-store" });
+}
+
+const ADMIN_PAGE = `<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>访问策略管理</title><style>
+:root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#142734;background:#f2f6f6}*{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:20px}.panel{width:min(100%,480px);background:#fff;border:1px solid #c8d8d8;border-radius:18px;padding:28px;box-shadow:0 16px 48px #16323818}h1{font-size:25px;margin:0 0 8px}.eyebrow{font-size:12px;letter-spacing:.12em;color:#16857f;font-weight:700}.description,.note{line-height:1.6;color:#526874;font-size:14px}.field{display:grid;gap:8px;margin:22px 0 14px;font-weight:650;font-size:14px}input{width:100%;padding:14px;border:1px solid #9fc8c6;border-radius:10px;font:inherit;font-size:18px;letter-spacing:.12em}.action,.preset{border:0;border-radius:10px;padding:13px 16px;font:inherit;font-weight:700;cursor:pointer}.action{width:100%;background:#16857f;color:#fff}.preset{background:#edf5f4;color:#123f3d;text-align:left}.presets{display:grid;gap:10px;margin:18px 0}.preset small{display:block;margin-top:4px;color:#607680;font-weight:400}.status{min-height:24px;margin:14px 0 0;font-size:14px;color:#526874}.status.error{color:#ae2533}.status.ok{color:#147a5f}.current{padding:14px;border-left:4px solid #16857f;background:#f5fafa;border-radius:8px;word-break:break-word}.custom{display:flex;gap:8px;margin-top:12px}.custom input{font-size:15px;letter-spacing:0}.custom button{white-space:nowrap}.logout{margin-top:18px;background:none;border:0;color:#526874;text-decoration:underline;font:inherit;cursor:pointer}@media(max-width:420px){body{padding:12px}.panel{padding:22px 18px;border-radius:14px}.custom{display:block}.custom button{width:100%;margin-top:8px}}
+</style></head><body><main class="panel"><div class="eyebrow">ACCESS · 管理</div><h1>访问验证码策略</h1><p class="description">使用身份验证器当前的 6 位动态码登录。登录后 15 分钟内可直接切换策略。</p>
+<form id="login"><label class="field">动态验证码<input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位数字" required></label><button class="action" type="submit">进入管理</button></form>
+<section id="controls" hidden><p class="current">当前策略：<strong id="current">读取中</strong></p><div class="presets"><button class="preset" data-policy="CN:JS">仅江苏省需要验证码<small>其他地区自动放行</small></button><button class="preset" data-policy="*">所有地区需要验证码<small>全局访问保护</small></button><button class="preset" data-policy="">关闭地域验证码<small>所有地区自动放行</small></button></div><label class="field">自定义规则（逗号分隔）<input id="custom" placeholder="例如：CN:JS,CN:SH"></label><button id="apply-custom" class="action" type="button">应用自定义规则</button><button id="logout" class="logout" type="button">退出管理</button></section><p id="status" class="status" role="status"></p><p class="note">规则保存到数据库后即时生效，无需重新发布网站。</p></main>
+<script>
+const key='homepage-access-policy-admin-v1';const status=document.querySelector('#status');const login=document.querySelector('#login');const controls=document.querySelector('#controls');const current=document.querySelector('#current');const custom=document.querySelector('#custom');
+function message(text,type=''){status.textContent=text;status.className='status '+type}function token(){return sessionStorage.getItem(key)||''}function headers(){return {'Authorization':'Bearer '+token(),'Content-Type':'application/json'}}function label(value){if(value==='CN:JS')return '仅江苏省需要验证码';if(value==='*')return '所有地区需要验证码';if(!value)return '关闭地域验证码';return value}
+async function response(response){const body=await response.json().catch(()=>({}));if(response.status===401){sessionStorage.removeItem(key);controls.hidden=true;login.hidden=false}if(!response.ok)throw new Error(body.error||'操作失败');return body}
+async function load(){if(!token())return;try{const body=await response(await fetch('/admin/policy',{headers:headers()}));current.textContent=label(body.policy.value);custom.value=body.policy.value;login.hidden=true;controls.hidden=false;message('已连接数据库策略。','ok')}catch(error){message('登录已失效，请重新输入动态码。','error')}}
+async function update(value){try{message('正在保存…');const body=await response(await fetch('/admin/policy',{method:'PUT',headers:headers(),body:JSON.stringify({required_regions:value})}));current.textContent=label(body.policy.value);custom.value=body.policy.value;message('已保存，访问规则即时生效。','ok')}catch(error){message(error.message,'error')}}
+login.addEventListener('submit',async(event)=>{event.preventDefault();try{message('正在验证…');const body=await response(await fetch('/admin/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:document.querySelector('#code').value})}));sessionStorage.setItem(key,body.token);document.querySelector('#code').value='';await load()}catch(error){message('动态验证码无效或已过期。','error')}});document.querySelectorAll('[data-policy]').forEach(button=>button.addEventListener('click',()=>update(button.dataset.policy)));document.querySelector('#apply-custom').addEventListener('click',()=>update(custom.value));document.querySelector('#logout').addEventListener('click',()=>{sessionStorage.removeItem(key);controls.hidden=true;login.hidden=false;message('已退出管理。')});load();
+</script></body></html>`;
+
 async function ensureAccessAttemptTable(env) {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS access_attempts (
@@ -428,7 +599,7 @@ async function handleAccessStatus(request, env, headers) {
       access_method: grant.accessMethod
     }, 200, headers);
   }
-  const policy = accessVerificationPolicy(request, env);
+  const policy = await accessVerificationPolicy(request, env);
   const tokenPayload = await verifyAccessToken(request, env);
   if (tokenPayload && (tokenPayload.am !== "region_bypass" || !policy.required)) {
     return json({
@@ -469,7 +640,7 @@ async function handleAccessVerification(request, env, headers) {
       access_method: grant.accessMethod
     }, 200, headers);
   }
-  if (!accessVerificationPolicy(request, env).required) {
+  if (!(await accessVerificationPolicy(request, env)).required) {
     const grant = await createAccessToken(request, env, { accessMethod: "region_bypass" });
     return json({
       ok: true,
@@ -733,8 +904,24 @@ export default {
     const origin = request.headers.get("Origin") || "";
     const headers = corsHeaders(origin);
 
+    if (request.method === "GET" && url.pathname === "/admin") {
+      return new Response(ADMIN_PAGE, { status: 200, headers: adminHeaders() });
+    }
+
+    if (request.method === "POST" && url.pathname === "/admin/session") {
+      return handleAdminSession(request, env);
+    }
+
+    if (request.method === "GET" && url.pathname === "/admin/policy") {
+      return handleAdminPolicyRead(request, env);
+    }
+
+    if (request.method === "PUT" && url.pathname === "/admin/policy") {
+      return handleAdminPolicyUpdate(request, env);
+    }
+
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v31-jiangsu-access-gate" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v31-jiangsu-access-gate", gateway_version: "v32-d1-access-policy" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
