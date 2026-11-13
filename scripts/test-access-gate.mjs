@@ -21,7 +21,7 @@ assert.match(homepageSource, /src="assets\/demos\/wrc-report-cover\.png"/);
 assert.match(frontendSource, /wrcReportTitle: "WRC 现场报道"/);
 assert.match(frontendSource, /wrcReportTitle: "WRC on-site report"/);
 assert.match(frontendSource, /包括衣服折叠、纸箱封包、年画拓印等。/);
-assert.match(frontendSource, /const analyticsConsentVersion = "v30-global-access-gate"/);
+assert.match(frontendSource, /const analyticsConsentVersion = "v31-jiangsu-access-gate"/);
 assert.match(frontendSource, /document\.querySelectorAll\("\[data-i18n-alt\]"\)/);
 
 const preAccessAnalytics = frontendSource.match(/function initializePreAccessAnalytics\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
@@ -112,11 +112,11 @@ const environment = {
   ACCESS_IP_ALLOWLIST: "203.0.113.9,2001:db8:abcd::/48",
   ACCESS_TOKEN_SECRET: tokenSecret,
   ACCESS_TOTP_SECRET: totpSecret,
-  ACCESS_REQUIRED_REGIONS: "*",
+  ACCESS_REQUIRED_REGIONS: "CN:JS",
   DB: database
 };
 
-assert.match(workerSource, /const DEFAULT_ACCESS_REQUIRED_REGIONS = "\*"/);
+assert.match(workerSource, /const DEFAULT_ACCESS_REQUIRED_REGIONS = "CN:JS"/);
 assert.match(workerSource, /if \(rawRule === "\*"\) return true/);
 
 const denied = await worker.default.fetch(makeRequest("/access/status"), environment);
@@ -125,12 +125,12 @@ const deniedBody = await denied.json();
 assert.equal(deniedBody.allowed, false);
 assert.equal(deniedBody.access_required, true);
 
-const globalPolicyDenied = await worker.default.fetch(makeRequest("/access/status", {
+const nonJiangsuBypass = await worker.default.fetch(makeRequest("/access/status", {
   headers: { "CF-Connecting-IP": "198.51.100.20" },
   cf: { country: "CN", regionCode: "SH", region: "Shanghai" }
 }), environment);
-assert.equal(globalPolicyDenied.status, 401);
-assert.equal((await globalPolicyDenied.json()).access_required, true);
+assert.equal(nonJiangsuBypass.status, 200);
+assert.equal((await nonJiangsuBypass.json()).method, "region_bypass");
 
 const configuredShanghaiPolicy = await worker.default.fetch(makeRequest("/access/status", {
   headers: { "CF-Connecting-IP": "198.51.100.21" }
@@ -157,7 +157,7 @@ const arrivalAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "access_gate_arrival",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v30-global-access-gate"
+    consent_version: "v31-jiangsu-access-gate"
   })
 }), environment);
 assert.equal(arrivalAnalytics.status, 201);
@@ -168,7 +168,7 @@ const roboRsiAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "roborsi_project_click",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v30-global-access-gate"
+    consent_version: "v31-jiangsu-access-gate"
   })
 }), environment);
 assert.equal(roboRsiAnalytics.status, 201);
@@ -209,7 +209,7 @@ const linkedTotpAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v30-global-access-gate"
+    consent_version: "v31-jiangsu-access-gate"
   })
 }), environment);
 assert.equal(linkedTotpAnalytics.status, 201);
@@ -241,7 +241,7 @@ const linkedAnalytics = await worker.default.fetch(makeRequest("/events", {
   body: JSON.stringify({
     event: "page_view",
     source_page: "https://tzhangzju.github.io/",
-    consent_version: "v30-global-access-gate"
+    consent_version: "v31-jiangsu-access-gate"
   })
 }), environment);
 assert.equal(linkedAnalytics.status, 201);

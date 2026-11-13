@@ -7,7 +7,7 @@ const ACCESS_INVITE_LENGTH = 16;
 // Override with ACCESS_REQUIRED_REGIONS (comma-separated), for example
 // "*" for every location or "CN:JS,CN:SH" for a regional policy. An
 // explicitly empty value disables verification.
-const DEFAULT_ACCESS_REQUIRED_REGIONS = "*";
+const DEFAULT_ACCESS_REQUIRED_REGIONS = "CN:JS";
 
 const ALLOWED_EVENTS = new Set([
   "access_gate_arrival", "access_gate_cached_grant", "access_gate_check", "access_gate_granted",
@@ -734,7 +734,7 @@ export default {
     const headers = corsHeaders(origin);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v30-global-access-gate" }, 200, headers);
+      return json({ ok: true, service: "homepage-analytics-pages", consent_version: "v31-jiangsu-access-gate" }, 200, headers);
     }
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/access/")) {
@@ -867,7 +867,7 @@ export default {
       classifyDevice(userAgent),
       classifyBrowser(userAgent),
       classifyOS(userAgent),
-      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v30-global-access-gate",
+      typeof body.consent_version === "string" ? body.consent_version.slice(0, 30) : "v31-jiangsu-access-gate",
       hasGps ? latitude : null,
       hasGps ? longitude : null,
       optionalNumber(location.accuracy),
